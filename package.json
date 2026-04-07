@@ -8,6 +8,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "framer-motion": "^12.38.0",
     "jotai": "^2.19.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

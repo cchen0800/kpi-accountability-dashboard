@@ -1,13 +1,43 @@
+import { useState } from 'react'
+import { motion } from 'framer-motion'
+
 const FLAG_CONFIG = {
-  none: { color: '#059669', label: 'On Track' },
-  optimism_gap: { color: '#B45309', label: 'Optimism Gap' },
-  submission_gap: { color: '#DC2626', label: 'Submission Gap' },
-  vanity_metrics: { color: '#7C3AED', label: 'Vanity Metrics' },
-  no_progress: { color: '#DC2626', label: 'No Progress' },
-  other: { color: '#0D7490', label: 'Other' },
+  none: {
+    color: '#059669',
+    label: 'On Track',
+    description: 'Meeting or exceeding KPI targets with consistent standup submissions. No accountability concerns detected.',
+  },
+  optimism_gap: {
+    color: '#B45309',
+    label: 'Optimism Gap',
+    description: 'Updates use positive language ("feeling good," "great call") but underlying metrics are declining or stalled. The tone masks the reality.',
+  },
+  submission_gap: {
+    color: '#DC2626',
+    label: 'Submission Gap',
+    description: 'Missing standup submissions on expected days. May submit catch-up updates covering multiple days, violating the daily accountability cadence.',
+  },
+  vanity_metrics: {
+    color: '#7C3AED',
+    label: 'Vanity Metrics',
+    description: 'Activity metrics (e.g. calls made, emails sent) look strong, but outcome metrics (e.g. meetings booked, deals closed) are declining. Effort without results.',
+  },
+  no_progress: {
+    color: '#DC2626',
+    label: 'No Progress',
+    description: 'The same blocker or task is repeated across multiple days with no escalation, resolution, or forward movement. Stuck without action.',
+  },
+  other: {
+    color: '#0D7490',
+    label: 'Other',
+    description: 'An accountability pattern the AI identified that doesn\'t fit the standard categories. Check the employee detail for specifics.',
+  },
 }
 
+const ALL_FLAGS = ['none', 'optimism_gap', 'submission_gap', 'vanity_metrics', 'no_progress', 'other']
+
 export default function TeamRollup({ employees }) {
+  const [guideOpen, setGuideOpen] = useState(false)
   if (!employees || employees.length === 0) return null
 
   // Count by flag type
@@ -134,56 +164,134 @@ export default function TeamRollup({ employees }) {
             const pct = (seg.count / total) * 100
             const config = FLAG_CONFIG[seg.type] || FLAG_CONFIG.other
             return (
-              <div
+              <motion.div
                 key={seg.type}
+                initial={{ width: 0 }}
+                animate={{ width: `${pct}%` }}
+                transition={{
+                  duration: 0.8,
+                  delay: i * 0.15,
+                  ease: [0.4, 0, 0.2, 1],
+                }}
                 style={{
-                  width: `${pct}%`,
                   background: config.color,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
                   borderRight: i < segments.length - 1 ? '2px solid var(--card)' : 'none',
                   minWidth: pct > 0 ? 24 : 0,
+                  overflow: 'hidden',
                 }}
               >
-                <span className="mono" style={{
-                  fontSize: 11,
-                  fontWeight: 700,
-                  color: '#fff',
-                }}>
+                <motion.span
+                  className="mono"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.3, delay: i * 0.15 + 0.5 }}
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 700,
+                    color: '#fff',
+                  }}
+                >
                   {seg.count}
-                </span>
-              </div>
+                </motion.span>
+              </motion.div>
             )
           })}
         </div>
 
-        {/* Legend */}
+        {/* Legend + guide toggle */}
         <div style={{
           display: 'flex',
-          flexWrap: 'wrap',
-          gap: 16,
+          alignItems: 'center',
+          justifyContent: 'space-between',
           marginTop: 10,
         }}>
-          {segments.map(seg => {
-            const config = FLAG_CONFIG[seg.type] || FLAG_CONFIG.other
-            return (
-              <div key={seg.type} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{
-                  width: 8, height: 8, borderRadius: 2,
-                  background: config.color,
-                }} />
-                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>
-                  {config.label}
-                </span>
-                <span className="mono" style={{ fontSize: 11, color: 'var(--text-ghost)' }}>
-                  {seg.count}
-                </span>
-              </div>
-            )
-          })}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
+            {segments.map(seg => {
+              const config = FLAG_CONFIG[seg.type] || FLAG_CONFIG.other
+              return (
+                <div key={seg.type} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{
+                    width: 8, height: 8, borderRadius: 2,
+                    background: config.color,
+                  }} />
+                  <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                    {config.label}
+                  </span>
+                  <span className="mono" style={{ fontSize: 11, color: 'var(--text-ghost)' }}>
+                    {seg.count}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+
+          <button
+            onClick={() => setGuideOpen(o => !o)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 4,
+              background: 'none', border: 'none', padding: 0,
+              fontSize: 11, fontWeight: 600, color: 'var(--text-ghost)',
+              fontFamily: 'var(--font)', cursor: 'pointer',
+              transition: 'color 0.2s ease',
+              flexShrink: 0,
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--accent)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-ghost)'}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            {guideOpen ? 'Hide guide' : 'What do these mean?'}
+          </button>
         </div>
+
+        {/* Expandable guide */}
+        {guideOpen && (
+          <div style={{
+            marginTop: 14,
+            padding: '16px 18px',
+            background: 'var(--bg)',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--border-subtle)',
+            animation: 'fade-in 0.3s ease both',
+          }}>
+            <div style={{
+              fontSize: 12, fontWeight: 700, color: 'var(--text)',
+              marginBottom: 12,
+            }}>
+              Accountability Flag Guide
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {ALL_FLAGS.map(type => {
+                const config = FLAG_CONFIG[type]
+                return (
+                  <div key={type} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                    <div style={{
+                      width: 10, height: 10, borderRadius: 3,
+                      background: config.color,
+                      flexShrink: 0,
+                      marginTop: 3,
+                    }} />
+                    <div>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: config.color }}>
+                        {config.label}
+                      </div>
+                      <div style={{
+                        fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)',
+                        lineHeight: 1.5, marginTop: 1,
+                      }}>
+                        {config.description}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
