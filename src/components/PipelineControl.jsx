@@ -1,15 +1,77 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { useAtom } from 'jotai'
 import { pipelineStatusAtom } from '../lib/store/pipeline'
-import { triggerPipeline, fetchPipelineStatus } from '../lib/api/pipeline'
+import { triggerStage, fetchPipelineStatus } from '../lib/api/pipeline'
 
 const STAGES = [
-  { key: 'generating', label: 'Generating updates...' },
-  { key: 'extracting', label: 'Extracting KPIs...' },
-  { key: 'reasoning', label: 'Reasoning about accountability...' },
+  {
+    key: 'generate',
+    runningStatus: 'generating',
+    doneStatus: 'stage_generate_done',
+    label: 'Generate Standups',
+    description: 'GPT creates realistic daily standup updates for each employee using their writing style and hidden performance truth.',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+      </svg>
+    ),
+  },
+  {
+    key: 'extract',
+    runningStatus: 'extracting',
+    doneStatus: 'stage_extract_done',
+    label: 'Extract KPIs',
+    description: 'A second GPT agent reads the standups and extracts structured KPI data — targets, actuals, deltas — without seeing the hidden truth.',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" />
+      </svg>
+    ),
+  },
+  {
+    key: 'reason',
+    runningStatus: 'reasoning',
+    doneStatus: 'complete',
+    label: 'Flag Accountability',
+    description: 'A third GPT agent reasons over extracted data to identify accountability gaps, assign flags, and recommend CEO-level actions.',
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><circle cx="12" cy="12" r="10" /><line x1="12" y1="17" x2="12.01" y2="17" />
+      </svg>
+    ),
+  },
 ]
 
-export default function PipelineControl({ onComplete }) {
+function getStageState(stageIndex, pipelineStatus) {
+  const stage = STAGES[stageIndex]
+
+  // Currently running this stage
+  if (pipelineStatus === stage.runningStatus) return 'running'
+
+  // This stage is done
+  if (pipelineStatus === stage.doneStatus) return 'done'
+
+  // A later stage is running or done — this one must be done
+  for (let i = stageIndex + 1; i < STAGES.length; i++) {
+    if (pipelineStatus === STAGES[i].runningStatus ||
+        pipelineStatus === STAGES[i].doneStatus) return 'done'
+  }
+  if (pipelineStatus === 'complete') return 'done'
+
+  // Previous stage is done — this one is ready
+  if (stageIndex === 0) return 'ready'
+  const prev = STAGES[stageIndex - 1]
+  if (pipelineStatus === prev.doneStatus) return 'ready'
+
+  // A later previous stage is done
+  for (let i = stageIndex; i < STAGES.length; i++) {
+    if (pipelineStatus === STAGES[i].doneStatus) return 'done'
+  }
+
+  return 'locked'
+}
+
+export default function PipelineControl({ onComplete, onReset }) {
   const [status, setStatus] = useAtom(pipelineStatusAtom)
   const pollRef = useRef(null)
 
@@ -19,18 +81,17 @@ export default function PipelineControl({ onComplete }) {
     try {
       const data = await fetchPipelineStatus()
       setStatus(data)
-      if (data.status === 'complete' || data.status === 'error') {
+      if (!['pending', 'generating', 'extracting', 'reasoning'].includes(data.status)) {
         clearInterval(pollRef.current)
         pollRef.current = null
-        if (data.status === 'complete' && onComplete) onComplete()
+        if (onComplete) onComplete()
       }
     } catch {
-      // ignore poll errors
+      // ignore
     }
   }, [setStatus, onComplete])
 
   useEffect(() => {
-    // Check initial status
     fetchPipelineStatus().then(data => {
       setStatus(data)
       if (['pending', 'generating', 'extracting', 'reasoning'].includes(data.status)) {
@@ -40,109 +101,210 @@ export default function PipelineControl({ onComplete }) {
     return () => { if (pollRef.current) clearInterval(pollRef.current) }
   }, [])
 
-  const handleRun = async () => {
+  const handleRunStage = async (stageKey) => {
     try {
-      await triggerPipeline()
-      setStatus({ status: 'pending', stage: null, error: null })
+      await triggerStage(stageKey)
+      const runningStatus = STAGES.find(s => s.key === stageKey).runningStatus
+      setStatus({ status: runningStatus, stage: stageKey, error: null })
       pollRef.current = setInterval(poll, 2000)
     } catch (e) {
       if (e.status === 409) {
-        setStatus(prev => ({ ...prev, error: 'Pipeline already running' }))
+        setStatus(prev => ({ ...prev, error: 'Pipeline already running — try again in a moment' }))
+      } else {
+        setStatus({ status: 'error', stage: null, error: e.message || 'Failed to start stage' })
       }
     }
   }
 
-  const activeStageIndex = STAGES.findIndex(s => s.key === status.status)
-  const activeLabel = activeStageIndex >= 0 ? STAGES[activeStageIndex].label : null
-
   return (
-    <div className="animate-in" style={{ animationDelay: '0.1s' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-        <button
-          onClick={handleRun}
-          disabled={isRunning}
-          style={{
-            background: isRunning ? 'var(--text-ghost)' : 'var(--accent)',
-            color: '#fff',
-            border: 'none',
-            borderRadius: 'var(--radius-sm)',
-            padding: '10px 22px',
-            fontSize: 13,
-            fontWeight: 600,
-            fontFamily: 'var(--font)',
-            cursor: isRunning ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s ease',
-            opacity: isRunning ? 0.7 : 1,
-          }}
-        >
-          {isRunning ? 'Running...' : 'Run Analysis'}
-        </button>
-
-        {isRunning && activeLabel && (
-          <span style={{
-            fontSize: 13,
-            fontWeight: 500,
-            color: 'var(--accent)',
-            animation: 'progress-pulse 1.5s ease-in-out infinite',
-          }}>
-            {activeLabel}
-          </span>
-        )}
-
-        {status.status === 'error' && (
-          <span style={{ fontSize: 12, color: 'var(--danger)', fontWeight: 500 }}>
-            Error: {status.error}
-          </span>
+    <div className="card animate-in" style={{ animationDelay: '0.1s' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div>
+          <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.2px' }}>
+            Agentic Analysis Pipeline
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500, marginTop: 2 }}>
+            Three independent GPT agents process data sequentially — each stage unlocks the next
+          </div>
+        </div>
+        {!isRunning && status.status !== 'idle' && (
+          <button
+            onClick={() => {
+              setStatus({ status: 'idle', stage: null, error: null })
+              if (onReset) onReset()
+            }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 4,
+              background: 'none', border: 'none', padding: '4px 0',
+              fontSize: 11, fontWeight: 600, color: 'var(--text-ghost)',
+              fontFamily: 'var(--font)', cursor: 'pointer',
+              transition: 'color 0.2s ease', flexShrink: 0,
+            }}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--danger)'}
+            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-ghost)'}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+            </svg>
+            Start Over
+          </button>
         )}
       </div>
 
-      {/* Progress bar */}
-      {isRunning && (
-        <div style={{
-          display: 'flex',
-          gap: 4,
-          marginTop: 12,
-          height: 4,
-          borderRadius: 2,
-          overflow: 'hidden',
-        }}>
-          {STAGES.map((stage, i) => {
-            const isCurrent = stage.key === status.status
-            const isDone = activeStageIndex > i
-            return (
-              <div
-                key={stage.key}
-                style={{
-                  flex: 1,
-                  borderRadius: 2,
-                  background: isDone ? 'var(--success)' : isCurrent ? 'var(--accent)' : 'var(--border)',
-                  transition: 'background 0.4s ease',
-                  animation: isCurrent ? 'progress-pulse 1.5s ease-in-out infinite' : 'none',
-                }}
-              />
-            )
-          })}
-        </div>
-      )}
+      {/* Three stage cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+        {STAGES.map((stage, i) => {
+          const state = getStageState(i, status.status)
+          const isActive = state === 'running'
+          const isDone = state === 'done'
+          const isReady = state === 'ready'
+          const isLocked = state === 'locked'
 
-      {/* Stage labels under progress bar */}
-      {isRunning && (
-        <div style={{ display: 'flex', gap: 4, marginTop: 6 }}>
-          {STAGES.map((stage, i) => {
-            const isCurrent = stage.key === status.status
-            const isDone = activeStageIndex > i
-            return (
-              <div key={stage.key} style={{
-                flex: 1,
-                fontSize: 10,
-                fontWeight: isDone || isCurrent ? 600 : 500,
-                color: isDone ? 'var(--success)' : isCurrent ? 'var(--accent)' : 'var(--text-ghost)',
-                textAlign: 'center',
-              }}>
-                {isDone ? '✓ ' : ''}{stage.label.replace('...', '')}
+          return (
+            <div
+              key={stage.key}
+              className="animate-in"
+              style={{
+                animationDelay: `${0.15 + i * 0.08}s`,
+                padding: '16px',
+                borderRadius: 'var(--radius-sm)',
+                border: `1px solid ${isActive ? 'var(--accent)' : isDone ? 'var(--success)' : 'var(--border)'}`,
+                background: isActive ? 'var(--accent-glow)' : isDone ? 'rgba(5, 150, 105, 0.04)' : 'var(--bg)',
+                opacity: isLocked ? 0.5 : 1,
+                transition: 'all 0.3s ease',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 10,
+              }}
+            >
+              {/* Stage number + icon */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{
+                    width: 28, height: 28, borderRadius: '50%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 12, fontWeight: 700,
+                    background: isDone ? 'var(--success)' : isActive ? 'var(--accent)' : 'var(--bg-raised)',
+                    color: isDone || isActive ? '#fff' : 'var(--text-tertiary)',
+                    border: isDone || isActive ? 'none' : '1px solid var(--border)',
+                    transition: 'all 0.3s ease',
+                  }}>
+                    {isDone ? (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    ) : (
+                      i + 1
+                    )}
+                  </div>
+                  <span style={{
+                    fontSize: 13, fontWeight: 700,
+                    color: isDone ? 'var(--success)' : isActive ? 'var(--accent)' : 'var(--text)',
+                  }}>
+                    {stage.label}
+                  </span>
+                </div>
+                <div style={{
+                  color: isDone ? 'var(--success)' : isActive ? 'var(--accent)' : 'var(--text-ghost)',
+                  transition: 'color 0.3s ease',
+                }}>
+                  {stage.icon}
+                </div>
               </div>
-            )
-          })}
+
+              {/* Description */}
+              <div style={{
+                fontSize: 11.5,
+                color: 'var(--text-tertiary)',
+                fontWeight: 500,
+                lineHeight: 1.5,
+                flex: 1,
+              }}>
+                {stage.description}
+              </div>
+
+              {/* Action button */}
+              <button
+                onClick={() => handleRunStage(stage.key)}
+                disabled={!isReady || isRunning}
+                style={{
+                  width: '100%',
+                  padding: '8px 0',
+                  borderRadius: 'var(--radius-sm)',
+                  border: 'none',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  fontFamily: 'var(--font)',
+                  cursor: isReady && !isRunning ? 'pointer' : 'not-allowed',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 6,
+                  ...(isActive ? {
+                    background: 'var(--accent)',
+                    color: '#fff',
+                    opacity: 0.8,
+                  } : isDone ? {
+                    background: 'rgba(5, 150, 105, 0.1)',
+                    color: 'var(--success)',
+                  } : isReady ? {
+                    background: 'var(--accent)',
+                    color: '#fff',
+                  } : {
+                    background: 'var(--bg-raised)',
+                    color: 'var(--text-ghost)',
+                  }),
+                }}
+              >
+                {isActive ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
+                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                    Processing...
+                  </>
+                ) : isDone ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                    Complete
+                  </>
+                ) : isReady ? (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polygon points="5 3 19 12 5 21 5 3" />
+                    </svg>
+                    Run
+                  </>
+                ) : (
+                  <>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                    </svg>
+                    Locked
+                  </>
+                )}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Connector arrows between stages */}
+      {status.status === 'error' && (
+        <div style={{
+          marginTop: 12,
+          padding: '8px 12px',
+          borderRadius: 'var(--radius-sm)',
+          background: 'var(--danger-dim)',
+          border: '1px solid var(--danger)',
+          fontSize: 12,
+          fontWeight: 500,
+          color: 'var(--danger)',
+        }}>
+          Error: {status.error}
         </div>
       )}
     </div>

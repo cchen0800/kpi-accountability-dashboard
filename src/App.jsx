@@ -1,8 +1,10 @@
 import React, { Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
+import NavBar from './components/NavBar'
 
 const Dashboard = React.lazy(() => import('./pages/Dashboard'))
 const EmployeeDetail = React.lazy(() => import('./pages/EmployeeDetail'))
+const Pipeline = React.lazy(() => import('./pages/Pipeline'))
 
 function Loading() {
   return (
@@ -21,11 +23,15 @@ function Loading() {
 
 export default function App() {
   return (
-    <Suspense fallback={<Loading />}>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/employees/:id" element={<EmployeeDetail />} />
-      </Routes>
-    </Suspense>
+    <>
+      <NavBar />
+      <Suspense fallback={<Loading />}>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/employees/:id" element={<EmployeeDetail />} />
+          <Route path="/pipeline" element={<Pipeline />} />
+        </Routes>
+      </Suspense>
+    </>
   )
 }

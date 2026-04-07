@@ -123,6 +123,7 @@ export default function EmployeeDetail() {
           <SlackFeed
             updates={employee.updates}
             employeeName={employee.name}
+            employeeRole={employee.role}
             employeeId={employee.id}
           />
         </div>

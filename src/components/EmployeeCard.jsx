@@ -54,7 +54,13 @@ export default function EmployeeCard({ employee, index }) {
       {analysis && (
         <>
           {/* Submission rate */}
-          <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{
+            marginTop: 14, display: 'flex', alignItems: 'center', gap: 8,
+            padding: '6px 10px',
+            background: 'var(--bg-raised)',
+            borderRadius: 'var(--radius-sm)',
+            border: '1px solid var(--border-subtle)',
+          }}>
             <span style={{
               fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
               letterSpacing: '0.8px', color: 'var(--text-ghost)',
@@ -62,7 +68,7 @@ export default function EmployeeCard({ employee, index }) {
               Submission
             </span>
             <span className="mono" style={{
-              fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)',
+              fontSize: 13, fontWeight: 700, color: flagType === 'submission_gap' ? 'var(--danger)' : 'var(--text)',
             }}>
               {analysis.submission_rate} days
             </span>
@@ -95,7 +101,7 @@ export default function EmployeeCard({ employee, index }) {
                 Action
               </span>
               <div style={{
-                fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500, marginTop: 2,
+                fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500, fontStyle: 'italic', marginTop: 2,
               }}>
                 {analysis.recommended_action}
               </div>

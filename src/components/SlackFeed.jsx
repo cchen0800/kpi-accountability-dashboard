@@ -19,7 +19,7 @@ function getInitials(name) {
   return name.split(' ').map(w => w[0]).join('').toUpperCase()
 }
 
-function SlackMessage({ name, employeeId, day, content, time }) {
+function SlackMessage({ name, role, employeeId, day, content, time }) {
   const color = AVATAR_COLORS[employeeId] || '#4A154B'
   const dateLabel = DAY_DATES[day?.toLowerCase()] || day
 
@@ -46,14 +46,19 @@ function SlackMessage({ name, employeeId, day, content, time }) {
 
       {/* Message */}
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
           <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)' }}>
             {name}
           </span>
-          <span style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500 }}>
+          <span style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500, flexShrink: 0 }}>
             {dateLabel} {time || '5:47 PM'}
           </span>
         </div>
+        {role && (
+          <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500, marginTop: 1 }}>
+            {role}
+          </div>
+        )}
         <div style={{
           fontSize: 13.5,
           color: 'var(--text-secondary)',
@@ -91,7 +96,7 @@ function DateDivider({ label }) {
   )
 }
 
-export default function SlackFeed({ updates, employeeName, employeeId, allEmployees, fullHeight }) {
+export default function SlackFeed({ updates, employeeName, employeeRole, employeeId, allEmployees, fullHeight }) {
   // If allEmployees is provided, show combined feed; otherwise show single employee
   const isMultiUser = !!allEmployees
 
@@ -103,6 +108,7 @@ export default function SlackFeed({ updates, employeeName, employeeId, allEmploy
       for (const u of emp.updates) {
         messages.push({
           name: emp.name,
+          role: emp.role,
           employeeId: emp.id,
           day: u.day,
           content: u.content,
@@ -112,6 +118,7 @@ export default function SlackFeed({ updates, employeeName, employeeId, allEmploy
   } else {
     messages = (updates || []).map(u => ({
       name: employeeName,
+      role: employeeRole,
       employeeId: employeeId,
       day: u.day,
       content: u.content,
@@ -174,6 +181,7 @@ export default function SlackFeed({ updates, employeeName, employeeId, allEmploy
                 <SlackMessage
                   key={`${msg.employeeId}-${day}-${i}`}
                   name={msg.name}
+                  role={msg.role}
                   employeeId={msg.employeeId}
                   day={msg.day}
                   content={msg.content}

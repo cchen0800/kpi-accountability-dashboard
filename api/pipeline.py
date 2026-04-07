@@ -8,6 +8,7 @@ Stage 3 (Reasoning): GPT reasons over extracted data to assign flags + narrative
 
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 from models import db, Employee, PipelineRun, GeneratedUpdate, KpiExtraction, AnalysisResult
@@ -31,87 +32,22 @@ def run_pipeline(app):
 
         try:
             employees = Employee.query.all()
-
-            # Clean previous run data
             _clear_previous_data(run.id)
 
             # Stage 1: Generation
-            run.status = 'generating'
-            run.stage = 'generation'
-            db.session.commit()
-            log.info("Pipeline [%d] Stage 1: Generating updates...", run.id)
-
-            generated = {}
-            for emp in employees:
-                result = _generate_updates(emp)
-                total_prompt += result['prompt_tokens']
-                total_completion += result['completion_tokens']
-
-                updates = result['data'].get('updates', result['data'].get('days', []))
-                generated[emp.id] = updates
-
-                for update in updates:
-                    db.session.add(GeneratedUpdate(
-                        employee_id=emp.id,
-                        day=update.get('day', '').lower(),
-                        content=update.get('content', ''),
-                        pipeline_run_id=run.id,
-                    ))
-                db.session.commit()
+            p, c = _run_generate_stage(run, employees)
+            total_prompt += p
+            total_completion += c
 
             # Stage 2: Extraction
-            run.status = 'extracting'
-            run.stage = 'extraction'
-            db.session.commit()
-            log.info("Pipeline [%d] Stage 2: Extracting KPIs...", run.id)
-
-            extractions = {}
-            for emp in employees:
-                updates = generated.get(emp.id, [])
-                result = _extract_kpis(emp, updates)
-                total_prompt += result['prompt_tokens']
-                total_completion += result['completion_tokens']
-
-                data = result['data']
-                extractions[emp.id] = data
-
-                for kpi in data.get('kpis', []):
-                    db.session.add(KpiExtraction(
-                        employee_id=emp.id,
-                        kpi_name=kpi.get('name', ''),
-                        target=kpi.get('target', ''),
-                        actual=kpi.get('actual', ''),
-                        delta=kpi.get('delta', ''),
-                        status=kpi.get('status', 'missing'),
-                        pipeline_run_id=run.id,
-                    ))
-                db.session.commit()
+            p, c = _run_extract_stage(run, employees)
+            total_prompt += p
+            total_completion += c
 
             # Stage 3: Reasoning
-            run.status = 'reasoning'
-            run.stage = 'reasoning'
-            db.session.commit()
-            log.info("Pipeline [%d] Stage 3: Reasoning about accountability...", run.id)
-
-            for emp in employees:
-                updates = generated.get(emp.id, [])
-                extraction = extractions.get(emp.id, {})
-                result = _reason_accountability(emp, extraction, updates)
-                total_prompt += result['prompt_tokens']
-                total_completion += result['completion_tokens']
-
-                data = result['data']
-                db.session.add(AnalysisResult(
-                    employee_id=emp.id,
-                    flag_type=data.get('flag_type', 'none'),
-                    flag_label=data.get('flag_label', ''),
-                    summary=data.get('summary', ''),
-                    detail=data.get('detail', ''),
-                    recommended_action=data.get('recommended_action', ''),
-                    submission_rate=extraction.get('submission_rate', ''),
-                    pipeline_run_id=run.id,
-                ))
-                db.session.commit()
+            p, c = _run_reason_stage(run, employees)
+            total_prompt += p
+            total_completion += c
 
             # Complete
             run.status = 'complete'
@@ -133,8 +69,226 @@ def run_pipeline(app):
             db.session.commit()
 
 
+def run_stage(app, stage):
+    """Run a single pipeline stage. Called from per-stage API endpoints."""
+    with app.app_context():
+        # Get or create a pipeline run
+        run = PipelineRun.query.filter(
+            PipelineRun.status.in_(['stage_generate_done', 'stage_extract_done', 'pending'])
+        ).order_by(PipelineRun.id.desc()).first()
+
+        if stage == 'generate':
+            # Always start a fresh run for generate
+            run = PipelineRun(started_at=datetime.now(timezone.utc), status='pending')
+            db.session.add(run)
+            db.session.commit()
+            _clear_previous_data(run.id)
+
+        if not run:
+            log.error("No active pipeline run found for stage %s", stage)
+            return
+
+        total_prompt = 0
+        total_completion = 0
+
+        try:
+            employees = Employee.query.all()
+
+            if stage == 'generate':
+                p, c = _run_generate_stage(run, employees)
+                total_prompt += p
+                total_completion += c
+                run.status = 'stage_generate_done'
+                run.stage = None
+
+            elif stage == 'extract':
+                p, c = _run_extract_stage(run, employees)
+                total_prompt += p
+                total_completion += c
+                run.status = 'stage_extract_done'
+                run.stage = None
+
+            elif stage == 'reason':
+                p, c = _run_reason_stage(run, employees)
+                total_prompt += p
+                total_completion += c
+                run.status = 'complete'
+                run.stage = None
+                run.completed_at = datetime.now(timezone.utc)
+
+            run.total_tokens = (run.total_tokens or 0) + total_prompt + total_completion
+            run.total_cost_cents = (run.total_cost_cents or 0) + estimate_cost_cents(
+                OPENAI_MODEL, total_prompt, total_completion
+            )
+            db.session.commit()
+            log.info("Pipeline [%d] Stage '%s' complete.", run.id, stage)
+
+        except Exception as e:
+            log.exception("Pipeline [%d] stage '%s' failed: %s", run.id, stage, e)
+            run.status = 'error'
+            run.error = str(e)
+            run.completed_at = datetime.now(timezone.utc)
+            db.session.commit()
+
+
+def _snapshot_employees(employees):
+    """Snapshot SQLAlchemy employee objects to plain dicts for thread safety."""
+    snaps = []
+    for emp in employees:
+        snaps.append(type('Emp', (), {
+            'id': emp.id, 'name': emp.name, 'role': emp.role,
+            'kpis': emp.kpis, 'writing_style': emp.writing_style,
+            'hidden_truth': emp.hidden_truth,
+        })())
+    return snaps
+
+
+def _run_generate_stage(run, employees):
+    """Stage 1: Generate standup updates. Returns (prompt_tokens, completion_tokens)."""
+    run.status = 'generating'
+    run.stage = 'generation'
+    run_id = run.id
+    db.session.commit()
+    log.info("Pipeline [%d] Stage 1: Generating updates...", run_id)
+
+    emps = _snapshot_employees(employees)
+
+    # Parallelize GPT calls across employees
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        futures = {pool.submit(_generate_updates, emp): emp for emp in emps}
+
+    total_p, total_c = 0, 0
+    for future, emp in futures.items():
+        result = future.result()
+        total_p += result['prompt_tokens']
+        total_c += result['completion_tokens']
+
+        updates = result['data'].get('updates', result['data'].get('days', []))
+        for update in updates:
+            db.session.add(GeneratedUpdate(
+                employee_id=emp.id,
+                day=update.get('day', '').lower(),
+                content=update.get('content', ''),
+                pipeline_run_id=run_id,
+            ))
+    db.session.commit()
+    return total_p, total_c
+
+
+def _run_extract_stage(run, employees):
+    """Stage 2: Extract KPIs from generated updates. Returns (prompt_tokens, completion_tokens)."""
+    run.status = 'extracting'
+    run.stage = 'extraction'
+    run_id = run.id
+    db.session.commit()
+    log.info("Pipeline [%d] Stage 2: Extracting KPIs...", run_id)
+
+    emps = _snapshot_employees(employees)
+
+    # Pre-fetch updates for all employees
+    emp_updates = {}
+    for emp in emps:
+        updates_db = GeneratedUpdate.query.filter_by(employee_id=emp.id, pipeline_run_id=run_id).all()
+        emp_updates[emp.id] = [{'day': u.day, 'content': u.content} for u in updates_db]
+
+    # Parallelize GPT calls
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        futures = {pool.submit(_extract_kpis, emp, emp_updates[emp.id]): emp for emp in emps}
+
+    total_p, total_c = 0, 0
+    for future, emp in futures.items():
+        result = future.result()
+        total_p += result['prompt_tokens']
+        total_c += result['completion_tokens']
+
+        data = result['data']
+        for kpi in data.get('kpis', []):
+            db.session.add(KpiExtraction(
+                employee_id=emp.id,
+                kpi_name=kpi.get('name', ''),
+                target=kpi.get('target', ''),
+                actual=kpi.get('actual', ''),
+                delta=kpi.get('delta', ''),
+                status=kpi.get('status', 'missing'),
+                pipeline_run_id=run_id,
+            ))
+    db.session.commit()
+    return total_p, total_c
+
+
+def _run_reason_stage(run, employees):
+    """Stage 3: Reason about accountability. Returns (prompt_tokens, completion_tokens)."""
+    run.status = 'reasoning'
+    run.stage = 'reasoning'
+    run_id = run.id
+    db.session.commit()
+    log.info("Pipeline [%d] Stage 3: Reasoning about accountability...", run_id)
+
+    emps = _snapshot_employees(employees)
+
+    # Pre-fetch data for all employees
+    emp_data = {}
+    for emp in emps:
+        updates_db = GeneratedUpdate.query.filter_by(employee_id=emp.id, pipeline_run_id=run_id).all()
+        updates = [{'day': u.day, 'content': u.content} for u in updates_db]
+
+        kpis_db = KpiExtraction.query.filter_by(employee_id=emp.id, pipeline_run_id=run_id).all()
+        extraction = {
+            'kpis': [{'name': k.kpi_name, 'target': k.target, 'actual': k.actual,
+                       'delta': k.delta, 'status': k.status} for k in kpis_db],
+            'submission_rate': f"{len(updates)}/5",
+        }
+        emp_data[emp.id] = (extraction, updates)
+
+    # Parallelize GPT calls
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        futures = {
+            pool.submit(_reason_accountability, emp, emp_data[emp.id][0], emp_data[emp.id][1]): emp
+            for emp in emps
+        }
+
+    total_p, total_c = 0, 0
+    for future, emp in futures.items():
+        result = future.result()
+        total_p += result['prompt_tokens']
+        total_c += result['completion_tokens']
+
+        extraction = emp_data[emp.id][0]
+        data = result['data']
+        db.session.add(AnalysisResult(
+            employee_id=emp.id,
+            flag_type=data.get('flag_type', 'none'),
+            flag_label=data.get('flag_label', ''),
+            summary=data.get('summary', ''),
+            detail=data.get('detail', ''),
+            recommended_action=data.get('recommended_action', ''),
+            submission_rate=extraction.get('submission_rate', ''),
+            pipeline_run_id=run_id,
+        ))
+    db.session.commit()
+    return total_p, total_c
+
+
 def is_pipeline_running():
-    """Check if a pipeline run is currently in progress."""
+    """Check if a pipeline run is currently in progress. Cleans up zombies older than 5 min."""
+    stuck = PipelineRun.query.filter(
+        PipelineRun.status.in_(['pending', 'generating', 'extracting', 'reasoning'])
+    ).all()
+
+    now = datetime.now()
+    for run in stuck:
+        try:
+            started = run.started_at.replace(tzinfo=None) if run.started_at else None
+            age = (now - started).total_seconds() if started else 999
+        except Exception:
+            age = 999
+        if age > 300:  # 5 minute timeout
+            log.warning("Pipeline [%d] stuck for %.0fs — marking as error", run.id, age)
+            run.status = 'error'
+            run.error = 'Timed out'
+            run.completed_at = datetime.now(timezone.utc)
+            db.session.commit()
+
     return PipelineRun.query.filter(
         PipelineRun.status.in_(['pending', 'generating', 'extracting', 'reasoning'])
     ).first() is not None
