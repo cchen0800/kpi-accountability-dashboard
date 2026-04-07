@@ -1,0 +1,106 @@
+You are generating synthetic data for a demo project: an Agentic KPI Accountability Dashboard. The dashboard will read daily employee status updates and use an AI agent to extract KPIs, score accountability, and flag gaps. Your job is to generate realistic, nuanced input data that gives the agent something interesting to find.
+
+====================
+COMPANY PROFILE
+====================
+Company: Lumen Collective (fictional)
+Industry: UGC marketplace technology — connects brands with a network of content creators to produce user-generated content, branded content, and social-first creative at scale. Think "Uber for content."
+Stage: Series C, ~180 employees, AI-first transformation underway
+Location: Los Angeles HQ, in-office culture
+CEO priority this quarter (Q4): "Execution velocity" — every team must show measurable weekly progress against their top 1-2 priorities. CEO has rolled out a daily end-of-day Slack standup as the accountability mechanism.
+
+Fictional client brands (use these throughout, do not use real brand names):
+- Northwind Athletics (athleisure)
+- Petalcrest Beauty (skincare)
+- Harborline Foods (snacks/CPG)
+- Ridgeway Outdoors (outdoor gear)
+- Cinderhouse Coffee (DTC coffee)
+
+====================
+THE 5 EMPLOYEES
+====================
+Generate one profile per employee with: name, role, manager, top 2 Q4 KPIs, writing style description, and a "hidden truth" (what the agent should eventually surface).
+
+1. Adam Cretti — Creator Operations Associate
+   - Manager: VP of Operations
+   - Q4 KPIs: (1) Onboard 25 new creators/week to the platform, (2) Maintain <24hr creator response time
+   - Writing style: Structured bullet points, emoji headers (✅ 🚧 📌), consistent format every day
+   - Hidden truth: HIGH PERFORMER. Hits or exceeds targets every day. Control group — the agent should rank him #1.
+
+2. Avery Collard — Client Success Manager
+   - Manager: Head of Client Success
+   - Q4 KPIs: (1) Renew 4 enterprise accounts this quarter, (2) Drive 15% expansion revenue from existing book
+   - Writing style: Long narrative paragraphs. Buries metrics in prose. Lots of "had a great call," "really positive energy," "feeling good about." Rarely commits to numbers or dates.
+   - Hidden truth: OPTIMISM-REALITY GAP. Updates SOUND great but when you extract actual numbers, the renewal pipeline is slipping. Northwind Athletics renewal has been "almost there" for 4 days. Petalcrest "expressed concerns" on Wednesday but Avery downplays it Thursday/Friday.
+
+3. Sean Kargman — Performance Marketing Analyst
+   - Manager: CMO
+   - Q4 KPIs: (1) Reduce CAC by 20%, (2) Launch 3 new paid social experiments/week
+   - Writing style: Dry, table-like, very numbers-forward. ROAS, CPM, CTR everywhere. No fluff.
+   - Hidden truth: SUBMISSION GAP. Skips Tuesday entirely. Skips Wednesday entirely. Friday he dumps a massive catch-up update covering 3 days. Actual numbers are fine but the cadence violation is the issue.
+
+4. Jeff Holmseth — Sales Development Rep
+   - Manager: VP Sales
+   - Q4 KPIs: (1) 200 outbound dials/week, (2) 8 qualified meetings booked/week
+   - Writing style: Short, breezy, casual. One-liners common. "Crushed it today, 45 dials 💪". Sometimes forgets to mention meetings booked at all.
+   - Hidden truth: VANITY METRICS GAP. Jeff hits his dial count every day (activity metric) but his meetings-booked number is quietly declining across the week (5 → 4 → 3 → 2 → 2). He never draws attention to it. The agent should catch the trend.
+
+5. Hannah Ankeny — Product Manager
+   - Manager: CPO
+   - Q4 KPIs: (1) Ship Creator Matching v2 by end of quarter, (2) Run 5 user research sessions/week
+   - Writing style: Thoughtful, qualitative, uses words like "alignment," "blockers," "stakeholder input," "iterating." Rarely commits to dates. Talks about process more than output.
+   - Hidden truth: NO FORWARD MOTION + MISSED KPI. Mentions "still aligning with eng on the matching algorithm" on Monday, Tuesday, Wednesday, Thursday, AND Friday — same blocker, no escalation, no progress. For the user research KPI: she completes only 2 of 5 sessions total this week. Mention 1 completed session on Monday and a 2nd on Tuesday. From Wednesday onward, she should mention rescheduling, pushing sessions to next week, or simply go silent on research without ever getting back to 5. The agent should flag both the repeated blocker AND the missed KPI by counting.
+
+====================
+THE WEEK
+====================
+Generate 5 days of updates: Monday through Friday of a single work week (use generic "Monday" through "Friday" — no dates needed).
+
+Submission cadence per employee:
+- Adam: submits all 5 days (Mon, Tue, Wed, Thu, Fri)
+- Avery: submits all 5 days (Mon, Tue, Wed, Thu, Fri)
+- Sean: submits MONDAY only, then SKIPS Tuesday and Wednesday entirely (omit those entries from the JSON — do not include placeholder updates), submits a brief Thursday update, then a long catch-up dump on Friday covering Tue/Wed/Thu/Fri activity
+- Jeff: submits all 5 days (Mon, Tue, Wed, Thu, Fri). Each daily update MUST mention BOTH dials AND meetings booked that day. Meetings-booked must follow this exact trend: Monday 5, Tuesday 4, Wednesday 3, Thursday 2, Friday 2. Dials should stay healthy (40-50/day). Jeff should never call attention to the declining meetings — bury it casually, treat it as normal.
+- Hannah: submits all 5 days (Mon, Tue, Wed, Thu, Fri)
+
+Each update should be 60-180 words and feel authentic to that person's voice. Plant the "hidden truths" naturally — don't make them obvious. A human skimming should miss them; the agent should catch them.
+
+====================
+OUTPUT FORMAT
+====================
+Output a single JSON file with this structure:
+
+{
+  "company": { ...company profile... },
+  "employees": [
+    {
+      "id": "emp_001",
+      "name": "Adam Cretti",
+      "role": "...",
+      "manager": "...",
+      "kpis": [...],
+      "writing_style": "...",
+      "hidden_truth": "..."
+    },
+    ...
+  ],
+  "updates": [
+    {
+      "employee_id": "emp_001",
+      "day": "Monday",
+      "text": "..."
+    },
+    ...
+  ]
+}
+
+Save the file as `synthetic_data.json` in the current directory.
+
+====================
+QUALITY BAR
+====================
+- Updates must feel like real Slack messages from real people, not LLM slop
+- Voice consistency matters more than perfect grammar — Jeff should feel different from Hannah at a glance
+- The "hidden truths" should be discoverable by an agent doing careful analysis, but invisible to a human skim
+- Use the fictional brand names naturally throughout (Avery mentions Northwind, Sean runs experiments for Cinderhouse, etc.)
+- Do NOT use real company or brand names anywhere

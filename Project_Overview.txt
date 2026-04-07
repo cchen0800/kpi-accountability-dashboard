@@ -1,0 +1,76 @@
+Project: Agentic KPI Accountability Dashboard
+
+ 
+
+Build a small dashboard that shows agentic AI generating synthetic data and flagging/analyzing KPI accountability.
+
+ 
+
+Simulate the inputs: Create 5 synthetic "employee" profiles with different writing styles and reporting cadences. Use AI to generate a week of daily status updates from each.
+Agentic extraction and analysis: Use an agentic workflow to parse the updates, extract KPIs, and analyze performance across the week. Surface things like submission rate, output volume, quality, and flag accountability gaps. Tooling is your call — n8n, Claude API, Cursor, whatever gets you there.
+Dashboard: Build a working dashboard that displays the KPIs and the AI analysis clearly. Doesn't need to be pretty, just needs to be functional.
+ 
+
+Deliverables:
+
+Working dashboard (deployed link, screen recording, or live demo)
+Short writeup: tools used, your approach, what you'd build next with more time
+ 
+
+We're not evaluating hand-written code. We're looking at how you scope a messy problem, leverage agentic tools, and ship something real.
+
+ 
+
+JD: About the job
+Described as the “Uber of Content,” Social Native is a marketplace technology company providing brands the ability to scale high-quality content creation and optimize their cross-channel digital marketing strategies. By connecting brands & agencies with a diverse network of creators, we provide data-driven insights, streamline content production, and improve performance across social and e-commerce channels. Brands like Unilever, Adidas, L’Oréal, Crocs, and Nestlé trust Social Native to enhance their paid and organic social strategies through user-generated content (UGC), branded content, and content editing solutions, ensuring they have the right creative assets to drive engagement and conversions.
+
+
+
+We’re hiring an AI Business Operations Manager to work in-office in Los Angeles and report directly to the CEO. This is a high-impact role for an operator who wants close proximity to leadership, real ownership, and a clear growth path into a Chief of Staff role. You will sit at the intersection of strategy, data, and AI—building the operational backbone that powers our next phase of growth.
+
+
+
+About the Role
+
+This role sits at the center of the company and works directly with the CEO to drive execution, alignment, and operational excellence. You will help translate strategy into action by leveraging AI tools, automation, and data infrastructure to ensure the business scales with clarity and momentum. We’re in the middle of an AI-first transformation—you’ll be the person making sure it shows up in how we actually operate day-to-day.
+
+This is not a remote role. You will be in the room, supporting leadership decisions in real time.
+
+
+
+What You’ll Do
+
+Partner daily with the CEO on priorities, planning, and execution—surfacing insights and recommendations backed by data
+Design, build, and maintain dashboards and reporting systems (Mode, Python, SQL) that give leadership real-time visibility into company performance
+Identify manual workflows across departments and automate them using AI tools (Claude, ChatGPT, Cursor, Make/n8n, custom scripts)
+Run weekly, monthly, and quarterly operating rhythms and leadership meetings—owning the agenda, tracking decisions, and driving accountability
+Drive cross-functional alignment across Product, GTM, Client Success, and Operations
+Build and maintain KPI tracking infrastructure across all departments—ensuring every team leader has clear, automated reporting on their metrics
+Draft executive updates, decks, and internal communications
+Identify process gaps and implement scalable operating systems—with a bias toward automation over headcount
+Act as connective tissue across teams to maintain accountability and momentum
+Proactively test and adopt new AI tools and workflows—you’ll be expected to stay on the cutting edge and bring new capabilities to the team
+
+
+Growth Path
+
+This role is intentionally designed as a path to Chief of Staff. Over time, you will take on:
+
+Broader strategic initiatives directly from the CEO
+Increased ownership of leadership communication and company-wide alignment
+Deeper involvement in planning, prioritization, and special projects
+Oversight of operational infrastructure and cross-departmental automation strategy
+
+
+What We’re Looking For
+
+3–6+ years experience in Business Operations, Strategy, Consulting, Data Science, or similar roles
+Experience building dashboards and reporting infrastructure (Mode, Looker, Tableau, or equivalent)
+Demonstrated experience using AI tools to automate workflows—not just prompting, but integrating AI into real business processes
+Experience in a startup or high-growth environment
+Strong executive presence and clear, confident communication
+Highly organized, analytical, and comfortable with ambiguity
+Bias for action and ownership—test fast, fail faster, refine
+Based in Los Angeles and excited to work in-office
+Bonus: SaaS, media, creator economy, or ad tech experience
+

@@ -1,0 +1,198 @@
+{
+  "company": {
+    "name": "Lumen Collective",
+    "industry": "UGC marketplace technology",
+    "stage": "Series C",
+    "headcount": 180,
+    "location": "Los Angeles",
+    "culture": "In-office",
+    "ceo_priority_q4": "Execution velocity — every team must show measurable weekly progress against top 1-2 priorities",
+    "accountability_mechanism": "Daily end-of-day Slack standup"
+  },
+  "fictional_brands": [
+    "Northwind Athletics",
+    "Petalcrest Beauty",
+    "Harborline Foods",
+    "Ridgeway Outdoors",
+    "Cinderhouse Coffee"
+  ],
+  "employees": [
+    {
+      "id": "emp_001",
+      "name": "Adam Cretti",
+      "role": "Creator Operations Associate",
+      "manager": "VP of Operations",
+      "kpis": [
+        "Onboard 25 new creators/week to the platform",
+        "Maintain <24hr creator response time"
+      ],
+      "writing_style": "Structured bullet points with emoji headers (✅ 🚧 📌), consistent format every day",
+      "hidden_truth": "HIGH PERFORMER. Hits or exceeds targets every day. Control group — should rank #1."
+    },
+    {
+      "id": "emp_002",
+      "name": "Avery Collard",
+      "role": "Client Success Manager",
+      "manager": "Head of Client Success",
+      "kpis": [
+        "Renew 4 enterprise accounts this quarter",
+        "Drive 15% expansion revenue from existing book"
+      ],
+      "writing_style": "Long narrative paragraphs. Buries metrics in prose. Optimistic tone ('great call,' 'positive energy,' 'feeling good'). Avoids numbers and dates.",
+      "hidden_truth": "OPTIMISM-REALITY GAP. Updates sound great but metrics are slipping. Northwind Athletics renewal stalled (4 days 'almost there'). Petalcrest expressed concerns but Avery downplays it."
+    },
+    {
+      "id": "emp_003",
+      "name": "Sean Kargman",
+      "role": "Performance Marketing Analyst",
+      "manager": "CMO",
+      "kpis": [
+        "Reduce CAC by 20%",
+        "Launch 3 new paid social experiments/week"
+      ],
+      "writing_style": "Dry, table-like, numbers-forward. ROAS, CPM, CTR everywhere. No fluff.",
+      "hidden_truth": "SUBMISSION GAP. Skips Tuesday and Wednesday entirely. Dumps massive catch-up on Friday covering 3 days. Numbers are fine but cadence violation is the issue."
+    },
+    {
+      "id": "emp_004",
+      "name": "Jeff Holmseth",
+      "role": "Sales Development Rep",
+      "manager": "VP Sales",
+      "kpis": [
+        "200 outbound dials/week",
+        "8 qualified meetings booked/week"
+      ],
+      "writing_style": "Short, breezy, casual. One-liners. 'Crushed it today, 45 dials 💪'. Sometimes forgets to mention meetings booked.",
+      "hidden_truth": "VANITY METRICS GAP. Hits dial count every day (activity metric) but meetings-booked is quietly declining: 5 → 4 → 3 → 2 → 2. Never draws attention to it."
+    },
+    {
+      "id": "emp_005",
+      "name": "Hannah Ankeny",
+      "role": "Product Manager",
+      "manager": "CPO",
+      "kpis": [
+        "Ship Creator Matching v2 by end of quarter",
+        "Run 5 user research sessions/week"
+      ],
+      "writing_style": "Thoughtful, qualitative. 'Alignment,' 'blockers,' 'stakeholder input,' 'iterating.' Rarely commits to dates. Talks process more than output.",
+      "hidden_truth": "NO FORWARD MOTION + MISSED KPI. Same blocker (aligning with eng on matching algorithm) mentioned Mon-Fri with no escalation or progress. User research KPI: only 2 completed sessions total (Mon, Tue). Wed-Fri: rescheduling, silence, no recovery to 5."
+    }
+  ],
+  "updates": [
+    {
+      "employee_id": "emp_001",
+      "day": "Monday",
+      "text": "✅ Creator onboarding crushed this week off to a strong start. Brought 28 new creators online today with full vetting complete—exceeded our 25/week target already. 🚧 Response time staying tight at 18hr avg. 📌 Prepping tomorrow's batch of 32 pending applications. All signatures collected, ready to activate. Northwind Athletics campaign crew is fully ramped and communicating smoothly. No blockers."
+    },
+    {
+      "employee_id": "emp_001",
+      "day": "Tuesday",
+      "text": "✅ 31 new creators onboarded today. Response time holding steady at 16hr. Strong momentum. 🚧 Petalcrest Beauty creator pool at 94% utilization—very healthy. One creator flagged for quality control but resolved same-day. 📌 Wednesday queue is ready: 29 applications in final review, signatures pending from 3. On track for 110+ new creators this week."
+    },
+    {
+      "employee_id": "emp_001",
+      "day": "Wednesday",
+      "text": "✅ 27 creators brought online. Response time 17hr (still under SLA). 🚧 Harborline Foods campaign launched today with full crew—12 creators, zero delays. 📌 Caught a batch data error in pending applications, fixed and re-routed same-day (no impact to timeline). Thursday queue locked: 30 applications ready for processing."
+    },
+    {
+      "employee_id": "emp_001",
+      "day": "Thursday",
+      "text": "✅ 29 new creators added to platform. Response time: 19hr (still compliant). Week total now at 115+ creators. 🚧 Ridgeway Outdoors seasonal cohort requested expedited onboarding—prioritized and completed 8 creators in 12hr SLA. 📌 Signature backlog cleared. Friday ready to go."
+    },
+    {
+      "employee_id": "emp_001",
+      "day": "Friday",
+      "text": "✅ Finished strong with 26 new creators onboarded. Final week count: 111 creators (4.4x the 25/week target). Response time avg across the week: 17.8hr (well under 24hr SLA). 🚧 All campaigns staffed and healthy: Northwind, Petalcrest, Harborline, Ridgeway. Cinderhouse Coffee cohort queued for Monday. 📌 Zero escalations. Zero compliance issues. Ready for next week."
+    },
+    {
+      "employee_id": "emp_002",
+      "day": "Monday",
+      "text": "Had a really great call with Northwind Athletics today—super positive energy on the renewal front. They're excited about the creative we've been producing for them and we're almost locked on extending for another year. Really feeling good about how this one is tracking. Petalcrest had a great sync too, they're expressing strong interest in expanding their budget for Q1. It's been a positive week so far for renewals and expansion conversations are flowing nicely."
+    },
+    {
+      "employee_id": "emp_002",
+      "day": "Tuesday",
+      "text": "Northwind is still in a great place—had another really productive conversation with them. They're reviewing contracts internally and should have something locked by end of week. Feeling optimistic. On the expansion side, Petalcrest mentioned some budget concerns during our call yesterday, but we're working through that and I'm confident we can get there. Overall momentum feels strong and I'm really positive about closing out the quarter on a high note."
+    },
+    {
+      "employee_id": "emp_002",
+      "day": "Wednesday",
+      "text": "Northwind still progressing nicely—they're just in internal approvals, which is normal. Expecting to hear back by Friday. Petalcrest expressed some concerns about pricing structure during our latest call, but it felt like a negotiation tactic and I think they're still very interested in expanding. Had a few other positive calls with smaller accounts looking to grow. Renewals and expansion are both tracking really well."
+    },
+    {
+      "employee_id": "emp_002",
+      "day": "Thursday",
+      "text": "Northwind update: still in legal review on their end, which honestly is a good sign—means they're taking it seriously. They assured me this morning it's almost there. Petalcrest situation feels like standard back-and-forth on terms. Had another encouraging call with them about their expansion plans. Really optimistic about how these are all shaping up. I think we're going to have a really strong finish to the quarter."
+    },
+    {
+      "employee_id": "emp_002",
+      "day": "Friday",
+      "text": "Northwind is still pending their legal signoff—they keep saying early next week. Frustrating but normal enterprise rhythm. Petalcrest called earlier today and honestly the tone shifted a bit—they said they're pausing expansion due to 'budget realignment,' which wasn't what they communicated earlier this week. Still working to understand what changed. Overall, the pipeline is solid and I'm confident we'll hit our targets, but want to keep a close eye on these two as they're our biggest renewal plays this quarter."
+    },
+    {
+      "employee_id": "emp_003",
+      "day": "Monday",
+      "text": "Monday creative blitz complete. ROAS on Cinderhouse Coffee campaign: 3.2x (target: 2.8x). CPM down 8% week-over-week. Launched 2 paid social experiments: (1) Carousel ads for Petalcrest—early CTR at 1.8%. (2) Video reels for Harborline Foods—engagement already strong. CAC trending down 4% vs. last week. Bidding optimization holding steady. All systems green. Next week: 1 more experiment pending creative review."
+    },
+    {
+      "employee_id": "emp_003",
+      "day": "Thursday",
+      "text": "Weekly catch-up (Tue/Wed activity included):\nTuesday: Petalcrest carousel ads hit 2.1% CTR (above benchmark). Harborline reels generating 12% view-through rate. ROAS portfolio avg: 3.1x. CAC down 6% cumulative.\nWednesday: Launched third experiment—Ridgeway Outdoors static ads (audience test). CPM dropped another 3% on core Cinderhouse campaign. ROAS now 3.3x YTD.\nThursday: All three experiments performing. Petalcrest carousel best performer at 2.4% CTR. Harborline reels maintain 11% VTR. Portfolio ROAS: 3.2x. CAC down 7% week-to-date."
+    },
+    {
+      "employee_id": "emp_003",
+      "day": "Friday",
+      "text": "Week close: Ran 3 experiments total (Tue, Wed, Thu launches). Friday performance: Cinderhouse core campaign ROAS 3.2x, CPM reduced 11% WoW, CAC down 7% cumulative. Petalcrest carousel best experiment at 2.4% CTR. Harborline reels stable 11% VTR. Ridgeway Outdoors audience test in learning phase (day 2), early signals positive. Total portfolio ROAS: 3.2x (exceeded 2.8x target). Ready for next week scaling phase."
+    },
+    {
+      "employee_id": "emp_004",
+      "day": "Monday",
+      "text": "Crushed dials today 💪 45 calls on the board. Qualified 5 meetings for next week—strong conversion on Northwind Athletics referral path. Pipeline feeling solid. Keep pushing."
+    },
+    {
+      "employee_id": "emp_004",
+      "day": "Tuesday",
+      "text": "48 dials today, quality on point. Booked 4 meetings (Petalcrest, Harborline, Ridgeway, and a net-new prospect). Still locked in. Pipeline tracking well."
+    },
+    {
+      "employee_id": "emp_004",
+      "day": "Wednesday",
+      "text": "46 dials, got 3 solid meetings booked this afternoon. One reschedule on the books but filled the slot quickly. Staying focused on the big accounts. Feeling good about velocity."
+    },
+    {
+      "employee_id": "emp_004",
+      "day": "Thursday",
+      "text": "44 dials logged today. Had a couple quick wins, got 2 meetings locked in. Some no-shows on call-backs but the ones that pick up are converting. Still on pace."
+    },
+    {
+      "employee_id": "emp_004",
+      "day": "Friday",
+      "text": "Wrapped the week solid—47 dials Friday. Week total north of 230 dials (crushed the 200 target 🔥). Really strong outreach velocity. All in, it's been a productive week on activity. Keep the momentum rolling into next week."
+    },
+    {
+      "employee_id": "emp_005",
+      "day": "Monday",
+      "text": "Creator Matching v2 is in full swing. Eng team and product alignment session scheduled for today—waiting to hear back on the algorithm requirements and infrastructure constraints. We've got solid requirements locked, but we're still aligning with eng on what the matching algorithm should prioritize (speed vs. accuracy tradeoff). Ran first user research session with a creator cohort this morning—super valuable feedback on workflow. One more session scheduled for tomorrow."
+    },
+    {
+      "employee_id": "emp_005",
+      "day": "Tuesday",
+      "text": "Alignment is critical here. Had another sync with eng this morning about the matching algorithm—they want more clarity on the weighting model before they commit to sprint capacity. We're iterating on requirements and should have stakeholder input finalized by Wednesday. Still aligning with eng on the technical approach. Ran second user research session with a brand client—got insights into how they want to filter creators. Good momentum but we need the eng alignment piece to move forward."
+    },
+    {
+      "employee_id": "emp_005",
+      "day": "Wednesday",
+      "text": "Hit a bit of a rhythm issue—still aligning with eng on the matching algorithm. They flagged that our requirements might be overspecified, so we're going back to prioritization with the leadership team. This is actually valuable because it'll help us ship faster, but it does mean the scope is shifting. Rescheduled user research session for next week (was planning to run this week but priorities shifted). Iterating hard on requirements but no major progress yet on the implementation side."
+    },
+    {
+      "employee_id": "emp_005",
+      "day": "Thursday",
+      "text": "Still in alignment phase on the Creator Matching v2 architecture. Eng team has concerns about the current algorithm proposal, so we're doing another round of stakeholder input before finalizing tech decisions. This is the right call but it means we're still in discovery. User research sessions getting pushed to next week—had to prioritize the internal alignment work. Expect clearer direction by Friday EOD."
+    },
+    {
+      "employee_id": "emp_005",
+      "day": "Friday",
+      "text": "Spent the week in alignment mode on the matching algorithm—eng and product still iterating on requirements and technical approach. We're getting closer to a decision but it's going slower than I'd like. User research KPI is behind this week (only got 2 sessions scheduled so far, need 5 for the week). I'm ramping up next week to catch up on research sessions. Matching v2 is locked in priority-wise but the technical alignment is taking longer than expected. Will get clarity next week on timeline."
+    }
+  ]
+}
