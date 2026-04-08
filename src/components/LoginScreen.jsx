@@ -41,7 +41,7 @@ export default function LoginScreen({ onLogin }) {
         padding: '32px 28px',
         background: 'var(--card)',
         border: '1px solid var(--border)',
-        borderRadius: 'var(--radius)',
+        borderRadius: 'var(--radius-md)',
         boxShadow: 'var(--shadow-elevated)',
       }}>
         <div style={{

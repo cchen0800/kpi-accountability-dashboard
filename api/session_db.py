@@ -99,6 +99,10 @@ def _patch_session_get_bind(db):
 
 def before_request_handler(db):
     """Assign a session ID and bind db to the session's engine."""
+    # Skip session DB setup for auth/health endpoints — they don't need it
+    if request.path in ("/api/auth/login", "/api/auth/check", "/api/health", "/api/track"):
+        return
+
     _patch_session_get_bind(db)
 
     session_id = request.cookies.get(SESSION_COOKIE)

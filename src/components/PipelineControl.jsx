@@ -10,7 +10,7 @@ const STAGES = [
     runningStatus: 'generating',
     doneStatus: 'stage_generate_done',
     label: 'Generate Standups',
-    estimate: '~30s',
+    estimate: null,
     description: 'GPT creates realistic daily standup updates for each employee using their writing style and hidden performance truth.',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

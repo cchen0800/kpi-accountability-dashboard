@@ -9,6 +9,7 @@ Stage 3 (Reasoning): GPT reasons over extracted data to assign flags + narrative
 import json
 import logging
 import os
+import random
 import re
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from datetime import datetime, timezone
@@ -691,10 +692,9 @@ def _run_generate_stage(run, employees):
     if not standup_sets:
         raise ValueError("No standup sets found in synthetic_data.json")
 
-    completed_count = PipelineRun.query.filter_by(status='complete').count()
-    set_index = completed_count % len(standup_sets)
+    set_index = random.randrange(len(standup_sets))
     selected_set = standup_sets[set_index]
-    log.info("Pipeline [%d] Using standup set %d of %d", run_id, set_index + 1, len(standup_sets))
+    log.info("Pipeline [%d] Using standup set %d of %d (random)", run_id, set_index + 1, len(standup_sets))
 
     for update in selected_set:
         db.session.add(GeneratedUpdate(
