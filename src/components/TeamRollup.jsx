@@ -90,7 +90,7 @@ export default function TeamRollup({ employees }) {
   return (
     <div className="card animate-in" style={{ animationDelay: '0.12s' }}>
       {/* Top row: KPI health summary cards */}
-      <div style={{
+      <div className="mobile-stack" style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(3, 1fr)',
         gap: 16,

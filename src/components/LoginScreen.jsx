@@ -37,7 +37,7 @@ export default function LoginScreen({ onLogin }) {
       background: 'var(--bg)',
     }}>
       <form onSubmit={handleSubmit} style={{
-        width: 340,
+        width: 'min(340px, calc(100vw - 32px))',
         padding: '32px 28px',
         background: 'var(--card)',
         border: '1px solid var(--border)',

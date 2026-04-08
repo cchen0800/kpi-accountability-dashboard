@@ -101,7 +101,7 @@ export default function Pipeline() {
 
   return (
     <div style={{
-      padding: '24px 28px var(--viewport-footer-gap)',
+      padding: '20px 16px var(--viewport-footer-gap)',
       width: '100%',
       maxWidth: 1200,
       margin: '0 auto',

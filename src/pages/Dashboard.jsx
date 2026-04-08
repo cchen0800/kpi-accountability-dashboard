@@ -79,7 +79,7 @@ export default function Dashboard() {
         position: 'fixed',
         top: 0,
         left: 0,
-        width: 400,
+        width: 'min(400px, 85vw)',
         height: '100vh',
         background: 'var(--card)',
         borderRight: '1px solid var(--border)',
@@ -150,7 +150,7 @@ export default function Dashboard() {
       )}
 
       {/* Main dashboard */}
-      <div style={{ padding: '24px 28px 40px' }}>
+      <div className="dash-main" style={{ padding: '20px 16px 40px' }}>
         {/* Header */}
         <div className="animate-in" style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
@@ -190,7 +190,7 @@ export default function Dashboard() {
           </div>
 
           {lastRun?.has_run && (
-            <div style={{ textAlign: 'right' }}>
+            <div className="mobile-hide" style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500 }}>
                 Last analyzed
               </div>
@@ -223,7 +223,7 @@ export default function Dashboard() {
           const showViz = allUpdates.length > 0 && employees.some(e => e.analysis)
           if (!showViz) return <div style={{ marginTop: 20 }}><TeamRollup employees={employees} /></div>
           return (
-            <div style={{
+            <div className="mobile-stack" style={{
               display: 'grid',
               gridTemplateColumns: '65fr 35fr',
               gap: 14,
@@ -256,7 +256,7 @@ export default function Dashboard() {
           ) : (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))',
               gap: 14,
             }}>
               {sorted.map((emp, i) => {

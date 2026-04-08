@@ -36,16 +36,16 @@ export default function NavBar() {
     <nav style={{
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'center',
-      position: 'relative',
-      padding: '0 28px',
+      justifyContent: 'space-between',
+      padding: '0 16px',
       height: 48,
       borderBottom: '1px solid var(--border)',
       background: 'var(--card)',
       flexShrink: 0,
+      gap: 8,
     }}>
       {/* Logo + title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'absolute', left: 28 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
         <div style={{
           width: 26, height: 26, borderRadius: 6,
           background: 'linear-gradient(135deg, var(--accent), var(--purple))',
@@ -56,7 +56,7 @@ export default function NavBar() {
             <path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" />
           </svg>
         </div>
-        <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px' }}>
+        <span className="nav-title" style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px' }}>
           KPI Accountability
         </span>
       </div>
@@ -81,6 +81,7 @@ export default function NavBar() {
                 borderBottom: isActive ? '2px solid var(--accent)' : '2px solid transparent',
                 marginBottom: -1,
                 transition: 'all 0.2s ease',
+                whiteSpace: 'nowrap',
               }}
               onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = 'var(--text-secondary)' }}
               onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = 'var(--text-tertiary)' }}
@@ -92,8 +93,8 @@ export default function NavBar() {
       </div>
 
       {/* Info icon + popover */}
-      {stats && (
-        <div ref={popoverRef} style={{ position: 'absolute', right: 28 }}>
+      {stats ? (
+        <div ref={popoverRef} style={{ flexShrink: 0 }}>
           <button
             onClick={() => setInfoOpen(o => !o)}
             style={{
@@ -116,8 +117,8 @@ export default function NavBar() {
           {infoOpen && (
             <div style={{
               position: 'absolute',
-              top: 38,
-              right: 0,
+              top: 44,
+              right: 12,
               background: 'var(--card)',
               border: '1px solid var(--border)',
               borderRadius: 'var(--radius-sm)',
@@ -154,7 +155,7 @@ export default function NavBar() {
             </div>
           )}
         </div>
-      )}
+      ) : <div style={{ width: 30 }} />}
     </nav>
   )
 }

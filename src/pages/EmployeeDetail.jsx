@@ -56,7 +56,7 @@ export default function EmployeeDetail() {
   const flagLabel = flagType === 'other' && analysis?.flag_label ? analysis.flag_label : flagStyle.label
 
   return (
-    <div style={{ padding: '24px 28px 40px', maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{ padding: '20px 16px 40px', maxWidth: 1200, margin: '0 auto' }}>
       {/* Back button */}
       <button
         className="animate-in"
@@ -82,8 +82,9 @@ export default function EmployeeDetail() {
       <div className="animate-in" style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         marginBottom: 24, paddingBottom: 18, borderBottom: '1px solid var(--border)',
+        flexWrap: 'wrap', gap: 8,
       }}>
-        <div>
+        <div style={{ minWidth: 0 }}>
           <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.3px' }}>
             {employee.name}
           </h1>
@@ -103,7 +104,7 @@ export default function EmployeeDetail() {
       </div>
 
       {/* Content grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16 }}>
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16 }}>
         {/* Left column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <DualChart updates={employee.updates} kpis={employee.kpi_extractions} />
