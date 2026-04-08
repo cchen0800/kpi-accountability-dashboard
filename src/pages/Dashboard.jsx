@@ -4,7 +4,8 @@ import { useAtom } from 'jotai'
 import { employeesAtom } from '../lib/store/employees'
 import { lastRunAtom } from '../lib/store/pipeline'
 import { fetchEmployees, fetchAllUpdates } from '../lib/api/employees'
-import { fetchLastRun } from '../lib/api/pipeline'
+import { fetchLastRun, resetPipeline } from '../lib/api/pipeline'
+import { pipelineStatusAtom } from '../lib/store/pipeline'
 import { sortBySeverity, FLAG_STYLES, worstDelta } from '../lib/flags'
 import EmployeeCard from '../components/EmployeeCard'
 import SlackFeed from '../components/SlackFeed'
@@ -15,6 +16,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [employees, setEmployees] = useAtom(employeesAtom)
   const [lastRun, setLastRun] = useAtom(lastRunAtom)
+  const [, setPipelineStatus] = useAtom(pipelineStatusAtom)
   const [allUpdates, setAllUpdates] = useState([])
   const [slackOpen, setSlackOpen] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -162,22 +164,28 @@ export default function Dashboard() {
             <button
               onClick={() => setSlackOpen(true)}
               style={{
-                width: 36, height: 36, borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border)',
-                background: 'var(--bg-raised)',
+                height: 34, borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--accent)',
+                background: 'var(--accent-glow)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 6,
+                padding: '0 12px',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
-                color: 'var(--text-ghost)',
+                color: 'var(--accent)',
                 flexShrink: 0,
+                fontSize: 12,
+                fontWeight: 700,
+                fontFamily: 'var(--font)',
               }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-active)'; e.currentTarget.style.color = 'var(--accent)'; e.currentTarget.style.background = 'var(--accent-glow)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-ghost)'; e.currentTarget.style.background = 'var(--bg-raised)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'var(--accent-glow)'; e.currentTarget.style.color = 'var(--accent)' }}
               title="Open #daily-standup feed"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
+              Standups
             </button>
 
             <div>
@@ -191,13 +199,44 @@ export default function Dashboard() {
           </div>
 
           {lastRun?.has_run && (
-            <div className="mobile-hide" style={{ textAlign: 'right', flexShrink: 0 }}>
-              <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500 }}>
-                Last analyzed
-              </div>
-              <div className="mono" style={{ fontSize: 12, color: 'var(--text-tertiary)', marginTop: 2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+              <span className="mobile-hide mono" style={{ fontSize: 11, color: 'var(--text-ghost)' }}>
                 {new Date(lastRun.started_at).toLocaleString()}
-              </div>
+              </span>
+              <button
+                onClick={async () => {
+                  try { await resetPipeline() } catch {}
+                  setPipelineStatus({ status: 'idle', stage: null, error: null })
+                  setLastRun(null)
+                  setEmployees([])
+                  navigate('/')
+                }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: 'var(--accent)',
+                  border: '1px solid var(--accent)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '8px 14px',
+                  fontSize: 11, fontWeight: 700, color: '#fff',
+                  fontFamily: 'var(--font)', cursor: 'pointer',
+                  transition: 'all 0.2s ease', flexShrink: 0,
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.background = '#1d42c7'
+                  e.currentTarget.style.borderColor = '#1d42c7'
+                  e.currentTarget.style.transform = 'translateY(-1px)'
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.background = 'var(--accent)'
+                  e.currentTarget.style.borderColor = 'var(--accent)'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                }}
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                </svg>
+                Simulate Another Week
+              </button>
             </div>
           )}
         </div>

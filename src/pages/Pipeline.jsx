@@ -130,7 +130,7 @@ export default function Pipeline() {
           lineHeight: 1.5,
           margin: '0 0 14px',
         }}>
-          Watch three AI agents analyze a week of employee standups — blind to the truth hidden in each profile.
+          Watch three AI agents analyze a week of employee standups, blind to the truth hidden in each profile.
         </p>
 
         {/* Collapsible explainer */}
@@ -189,23 +189,23 @@ export default function Pipeline() {
               <p style={{ margin: '0 0 10px' }}>
                 <strong style={{ color: 'var(--text)' }}>The scenario:</strong> Lumen Collective is a Series C UGC marketplace (180 employees, Austin TX)
                 where the CEO mandated daily Slack standups to drive execution velocity. Five employees across
-                Creator Ops, Client Success, Marketing, Sales, and Product report daily — each with their own
+                Creator Ops, Client Success, Marketing, Sales, and Product report daily, each with their own
                 writing style, KPI targets, and hidden performance patterns.
               </p>
               <p style={{ margin: '0 0 10px' }}>
                 <strong style={{ color: 'var(--text)' }}>The problem:</strong> Nobody reads 25+ updates a day.
                 But nobody reads 25+ updates a day. People learn to write updates that <em>sound</em> productive
-                without <em>being</em> productive — and the real issues hide in plain sight.
+                without <em>being</em> productive. The real issues hide in plain sight.
               </p>
               <p style={{ margin: '0 0 10px' }}>
                 <strong style={{ color: 'var(--text)' }}>The experiment:</strong> Each of the 5 employees below has a hidden performance truth baked into
-                their profile — an optimism gap, vanity metrics, missing submissions, or stalled progress. Three independent
+                their profile: an optimism gap, vanity metrics, missing submissions, or stalled progress. Three independent
                 AI agents process their standups sequentially: one loads the updates, one extracts KPIs blind, and one reasons
                 over the data to flag accountability gaps. No agent sees the full picture. Can the system still surface
                 what a busy CEO would miss?
               </p>
               <p style={{ margin: 0 }}>
-                <strong style={{ color: 'var(--text)' }}>Why this matters:</strong> This is what AI-first operations looks like — automation over headcount,
+                <strong style={{ color: 'var(--text)' }}>Why this matters:</strong> This is what AI-first operations looks like. Automation over headcount,
                 real-time visibility into team performance, and surfacing insights that would otherwise require hours
                 of manual review. The kind of operational backbone that scales.
               </p>
@@ -213,24 +213,6 @@ export default function Pipeline() {
           </div>
         </div>
 
-        {/* Stats strip */}
-        <div className="stats-strip">
-          <div className="stat-item">
-            <span className="stat-number">5</span> Employees
-          </div>
-          <span className="stat-dot">·</span>
-          <div className="stat-item">
-            <span className="stat-number">25</span> Standups
-          </div>
-          <span className="stat-dot">·</span>
-          <div className="stat-item">
-            <span className="stat-number">15</span> KPIs
-          </div>
-          <span className="stat-dot">·</span>
-          <div className="stat-item">
-            <span className="stat-number">3</span> AI Agents
-          </div>
-        </div>
       </div>
 
       {/* Pipeline control (stage cards) */}
