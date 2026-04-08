@@ -112,7 +112,7 @@ export default function Pipeline() {
 
   return (
     <div style={{
-      padding: '24px 28px 0',
+      padding: '24px 28px var(--viewport-footer-gap)',
       width: '100%',
       maxWidth: 1200,
       margin: '0 auto',
@@ -120,7 +120,7 @@ export default function Pipeline() {
       flexDirection: 'column',
       flex: 1,
       minHeight: 0,
-      height: 'calc(100vh - 48px)',
+      height: 'calc(100vh - 48px - var(--viewport-footer-gap))',
     }}>
       {/* Pipeline control (stage cards) */}
       <PipelineControl onComplete={loadOutputs} onReset={() => {

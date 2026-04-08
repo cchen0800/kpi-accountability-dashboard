@@ -112,6 +112,8 @@ export default function PipelineControl({ onComplete, onReset }) {
       pollRef.current = setInterval(poll, 2000)
     } catch (e) {
       if (e.status === 409) {
+        if (!pollRef.current) pollRef.current = setInterval(poll, 2000)
+        await poll()
         setStatus(prev => ({ ...prev, error: 'Pipeline already running — try again in a moment' }))
       } else {
         setStatus({ status: 'error', stage: null, error: e.message || 'Failed to start stage' })
@@ -299,7 +301,7 @@ export default function PipelineControl({ onComplete, onReset }) {
       </div>
 
       {/* Connector arrows between stages */}
-      {status.status === 'error' && (
+      {status.error && (
         <div style={{
           marginTop: 12,
           padding: '8px 12px',

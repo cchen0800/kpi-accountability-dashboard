@@ -8,6 +8,7 @@ Stage 3 (Reasoning): GPT reasons over extracted data to assign flags + narrative
 
 import json
 import logging
+import re
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
@@ -18,6 +19,556 @@ from config import OPENAI_MODEL
 log = logging.getLogger(__name__)
 
 FICTIONAL_BRANDS = "Northwind Athletics, Petalcrest Beauty, Harborline Foods, Ridgeway Outdoors, Cinderhouse Coffee"
+WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday"]
+MISSING_TOKENS = {"", "-", "—", "n/a", "na", "unknown", "none", "not provided"}
+
+
+def _as_kpi_list(raw_kpis):
+    if isinstance(raw_kpis, list):
+        return [str(k).strip() for k in raw_kpis if str(k).strip()]
+    if raw_kpis is None:
+        return []
+    if isinstance(raw_kpis, str):
+        text = raw_kpis.strip()
+        if not text:
+            return []
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, list):
+                return [str(k).strip() for k in parsed if str(k).strip()]
+        except Exception:
+            pass
+        return [text]
+    return [str(raw_kpis).strip()]
+
+
+def _extract_weekdays(text):
+    if not text:
+        return []
+    found = re.findall(r"\b(monday|tuesday|wednesday|thursday|friday)\b", str(text).lower())
+    deduped = []
+    seen = set()
+    for day in found:
+        if day not in seen:
+            deduped.append(day)
+            seen.add(day)
+    return deduped
+
+
+def _infer_expected_submission_days(hidden_truth):
+    truth = (hidden_truth or "").lower()
+    has_explicit_skip_language = any(
+        phrase in truth
+        for phrase in ("skip", "does not post", "missing day", "only generate", "posts on", "submits on")
+    )
+    if not has_explicit_skip_language:
+        return WEEKDAYS[:]
+
+    explicit_post_match = re.search(r"(posts on|submits on)\s+([^.]*)", truth)
+    if explicit_post_match:
+        posted_days = _extract_weekdays(explicit_post_match.group(2))
+        if posted_days:
+            return [d for d in WEEKDAYS if d in posted_days]
+
+    paren_only_match = re.search(r"only generate[^()]*\(([^)]*)\)", truth)
+    if paren_only_match:
+        posted_days = _extract_weekdays(paren_only_match.group(1))
+        if posted_days:
+            return [d for d in WEEKDAYS if d in posted_days]
+
+    skipped_days = []
+    skip_match = re.search(r"skips?\s+([^.]*)", truth)
+    if skip_match:
+        skipped_days = _extract_weekdays(skip_match.group(1))
+
+    if skipped_days:
+        return [d for d in WEEKDAYS if d not in skipped_days]
+
+    # If skip language exists but days are unclear, keep default weekdays.
+    return WEEKDAYS[:]
+
+
+def _normalize_generated_updates(raw_updates):
+    if not isinstance(raw_updates, list):
+        return []
+    cleaned = []
+    seen_days = set()
+    for item in raw_updates:
+        if not isinstance(item, dict):
+            continue
+        day = str(item.get("day", "")).strip().lower()
+        content = str(item.get("content", "")).strip()
+        if day not in WEEKDAYS or not content or day in seen_days:
+            continue
+        cleaned.append({"day": day, "content": content})
+        seen_days.add(day)
+    cleaned.sort(key=lambda x: WEEKDAYS.index(x["day"]))
+    return cleaned
+
+
+def _contains_week_total_language(content):
+    text = (content or "").lower()
+    if re.search(r"\b\d+(?:\.\d+)?\b[^.!?\n]{0,24}\bthis week\b", text):
+        return True
+    if "finished the week" in text:
+        return True
+    return False
+
+
+def _clean_str(value):
+    return str(value or "").strip()
+
+
+def _is_missing_value(value):
+    return _clean_str(value).lower() in MISSING_TOKENS
+
+
+def _extract_first_number(text):
+    match = re.search(r"-?\d+(?:\.\d+)?", _clean_str(text))
+    if not match:
+        return None
+    try:
+        return float(match.group(0))
+    except ValueError:
+        return None
+
+
+def _format_number(value):
+    if value is None:
+        return "—"
+    if abs(value - round(value)) < 1e-9:
+        return str(int(round(value)))
+    return f"{value:.1f}"
+
+
+def _normalize_status(status):
+    s = _clean_str(status).lower().replace("-", "_")
+    if s in ("on_track", "ontrack"):
+        return "on_track"
+    if s in ("at_risk", "atrisk"):
+        return "at_risk"
+    if s == "missing":
+        return "missing"
+    return ""
+
+
+def _delta_valid(delta):
+    d = _clean_str(delta)
+    if _is_missing_value(d):
+        return False
+    return re.match(r"^[+-]?\d+(?:\.\d+)?(?:\s?(?:%|x|hours?|hrs?|hr))?$", d.lower()) is not None
+
+
+def _target_number(target):
+    return _extract_first_number(target)
+
+
+def _kpi_kind(kpi_text):
+    text = (kpi_text or "").lower()
+    if "/week" in text and "response time" not in text:
+        return "count_week"
+    if "response time" in text or "hr" in text:
+        return "duration_threshold"
+    if "quarter" in text or "end of quarter" in text:
+        return "quarter_outcome"
+    return "generic"
+
+
+def _kpi_display_name(kpi_text):
+    text = (kpi_text or "").strip()
+    lower = text.lower()
+    if "response time" in lower:
+        return "Creator response time"
+    if "renew" in lower and "account" in lower:
+        return "Renew enterprise accounts"
+    if "expansion revenue" in lower:
+        return "Expansion revenue from existing book"
+    if "creator matching" in lower:
+        return "Ship Creator Matching v2"
+    if "user research" in lower and "session" in lower:
+        return "Run user research sessions"
+    if "outbound dials" in lower:
+        return "Outbound dials"
+    if "meetings" in lower and "booked" in lower:
+        return "Qualified meetings booked"
+    if "experiments" in lower:
+        return "Paid social experiments launched"
+    if "cac" in lower:
+        return "Reduce CAC"
+    if "onboard" in lower and "creator" in lower:
+        return "Onboard new creators"
+
+    cleaned = re.sub(r"<\s*\d+\s*hr", "", text, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\b\d+(?:\.\d+)?%?\b", "", cleaned)
+    cleaned = cleaned.replace("/week", "")
+    cleaned = re.sub(r"\b(this|the)?\s*quarter\b", "", cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" -/")
+    return cleaned or text
+
+
+def _kpi_target_value(kpi_text):
+    text = (kpi_text or "").strip()
+    lower = text.lower()
+
+    hr = re.search(r"<\s*(\d+(?:\.\d+)?)\s*hr", lower)
+    if hr:
+        return f"<{_format_number(float(hr.group(1)))}hr"
+
+    pct = re.search(r"(\d+(?:\.\d+)?)\s*%", lower)
+    if pct:
+        return f"{_format_number(float(pct.group(1)))}%"
+
+    num = re.search(r"(\d+(?:\.\d+)?)", lower)
+    if "/week" in lower and num:
+        return f"{_format_number(float(num.group(1)))}/week"
+    if "end of quarter" in lower:
+        return "end of quarter"
+    if "quarter" in lower and num:
+        return _format_number(float(num.group(1)))
+    return text
+
+
+def _build_expected_kpis(raw_kpis):
+    expected = []
+    for source in _as_kpi_list(raw_kpis):
+        expected.append({
+            "source": source,
+            "name": _kpi_display_name(source),
+            "target": _kpi_target_value(source),
+            "kind": _kpi_kind(source),
+        })
+    return expected
+
+
+def _tokenize(text):
+    return {
+        token
+        for token in re.findall(r"[a-z0-9]+", (text or "").lower())
+        if len(token) > 2 and token not in {"with", "from", "this", "that", "week", "quarter"}
+    }
+
+
+def _kpi_similarity(a, b):
+    ta, tb = _tokenize(a), _tokenize(b)
+    if not ta or not tb:
+        return 0.0
+    return len(ta & tb) / max(len(ta), len(tb))
+
+
+def _match_extracted_kpi_rows(expected_kpis, extracted_rows):
+    row_by_idx = {}
+    if not isinstance(extracted_rows, list):
+        return row_by_idx
+
+    used = set()
+    for row in extracted_rows:
+        if not isinstance(row, dict):
+            continue
+        row_text = f"{row.get('name', '')} {row.get('target', '')}"
+        best_idx, best_score = None, 0.0
+        for idx, spec in enumerate(expected_kpis):
+            if idx in used:
+                continue
+            score = max(
+                _kpi_similarity(row_text, spec["name"]),
+                _kpi_similarity(row_text, spec["source"]),
+            )
+            if score > best_score:
+                best_idx, best_score = idx, score
+        if best_idx is not None and best_score >= 0.20:
+            row_by_idx[best_idx] = row
+            used.add(best_idx)
+    return row_by_idx
+
+
+def _extract_count_total_for_kpi(kpi_text, updates):
+    text = (kpi_text or "").lower()
+    if "creator" in text and "onboard" in text:
+        numeric_pattern = r"(\d+(?:\.\d+)?)\s+(?:new\s+)?creators?"
+        another_pattern = r"\banother\s+(?:new\s+)?creators?\b"
+        zero_pattern = r"\b(?:0|zero|no)\s+(?:new\s+)?creators?\b"
+    elif "experiment" in text:
+        numeric_pattern = r"(\d+(?:\.\d+)?)\s+(?:new\s+)?(?:paid\s+social\s+)?experiments?"
+        another_pattern = r"\banother\s+(?:new\s+)?(?:paid\s+social\s+)?experiment\b"
+        zero_pattern = r"\b(?:0|zero|no)\s+(?:new\s+)?(?:paid\s+social\s+)?experiments?\b"
+    elif "dial" in text:
+        numeric_pattern = r"(\d+(?:\.\d+)?)\s+(?:outbound\s+)?dials?"
+        another_pattern = r"\banother\s+(?:outbound\s+)?dial\b"
+        zero_pattern = r"\b(?:0|zero|no)\s+(?:outbound\s+)?dials?\b"
+    elif "meeting" in text and "book" in text:
+        numeric_pattern = r"(\d+(?:\.\d+)?)\s+(?:qualified\s+)?meetings?(?:\s+booked)?"
+        another_pattern = r"\banother\s+(?:qualified\s+)?meeting(?:\s+booked)?\b"
+        zero_pattern = r"\b(?:0|zero|no)\s+(?:qualified\s+)?meetings?(?:\s+booked)?\b"
+    elif "research" in text and "session" in text:
+        numeric_pattern = r"(\d+(?:\.\d+)?)\s+(?:user\s+research\s+)?sessions?"
+        another_pattern = r"\banother\s+(?:user\s+research\s+)?session\b"
+        zero_pattern = r"\b(?:0|zero|no)\s+(?:additional\s+)?(?:user\s+research\s+)?sessions?\b"
+    else:
+        return None
+
+    def parse_value(content):
+        m = re.search(numeric_pattern, content)
+        if m:
+            try:
+                return float(m.group(1))
+            except ValueError:
+                return None
+        if re.search(another_pattern, content):
+            return 1.0
+        if re.search(zero_pattern, content):
+            return 0.0
+        return None
+
+    total = 0.0
+    seen = 0
+    for update in updates:
+        content = (update.get("content") or "").lower()
+        value = parse_value(content)
+        if value is None:
+            continue
+        total += value
+        seen += 1
+    return total if seen else None
+
+
+def _count_metric_coverage(kpi_text, updates):
+    text = (kpi_text or "").lower()
+    if "creator" in text and "onboard" in text:
+        patterns = (
+            r"(\d+(?:\.\d+)?)\s+(?:new\s+)?creators?",
+            r"\banother\s+(?:new\s+)?creators?\b",
+            r"\b(?:0|zero|no)\s+(?:new\s+)?creators?\b",
+        )
+    elif "experiment" in text:
+        patterns = (
+            r"(\d+(?:\.\d+)?)\s+(?:new\s+)?(?:paid\s+social\s+)?experiments?",
+            r"\banother\s+(?:new\s+)?(?:paid\s+social\s+)?experiment\b",
+            r"\b(?:0|zero|no)\s+(?:new\s+)?(?:paid\s+social\s+)?experiments?\b",
+        )
+    elif "dial" in text:
+        patterns = (
+            r"(\d+(?:\.\d+)?)\s+(?:outbound\s+)?dials?",
+            r"\banother\s+(?:outbound\s+)?dial\b",
+            r"\b(?:0|zero|no)\s+(?:outbound\s+)?dials?\b",
+        )
+    elif "meeting" in text and "book" in text:
+        patterns = (
+            r"(\d+(?:\.\d+)?)\s+(?:qualified\s+)?meetings?(?:\s+booked)?",
+            r"\banother\s+(?:qualified\s+)?meeting(?:\s+booked)?\b",
+            r"\b(?:0|zero|no)\s+(?:qualified\s+)?meetings?(?:\s+booked)?\b",
+        )
+    elif "research" in text and "session" in text:
+        patterns = (
+            r"(\d+(?:\.\d+)?)\s+(?:user\s+research\s+)?sessions?",
+            r"\banother\s+(?:user\s+research\s+)?session\b",
+            r"\b(?:0|zero|no)\s+(?:additional\s+)?(?:user\s+research\s+)?sessions?\b",
+        )
+    else:
+        return 0
+
+    covered = 0
+    for update in updates:
+        content = (update.get("content") or "").lower()
+        if any(re.search(pattern, content) for pattern in patterns):
+            covered += 1
+    return covered
+
+
+def _extract_duration_avg_hours(updates):
+    hours = []
+    for update in updates:
+        content = (update.get("content") or "").lower()
+        for match in re.findall(r"(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|hr)\b", content):
+            try:
+                hours.append(float(match))
+            except ValueError:
+                pass
+    if not hours:
+        return None
+    return sum(hours) / len(hours)
+
+
+def _has_numeric_evidence(kpi_text, updates):
+    keywords = _tokenize(kpi_text)
+    for update in updates:
+        content = (update.get("content") or "").lower()
+        if not re.search(r"\d", content):
+            continue
+        if any(keyword in content for keyword in keywords):
+            return True
+    return False
+
+
+def _missing_kpi_row(spec):
+    return {
+        "name": spec["name"],
+        "target": spec["target"],
+        "actual": "—",
+        "delta": "—",
+        "status": "missing",
+    }
+
+
+def _derive_delta(target, actual, kind):
+    t = _target_number(target)
+    a = _extract_first_number(actual)
+    if t is None or a is None:
+        return "—"
+
+    diff = a - t
+    if kind == "duration_threshold":
+        return f"{_format_number(diff)} hours" if diff < 0 else f"+{_format_number(diff)} hours"
+    if "%" in (target or ""):
+        sign = "+" if diff >= 0 else ""
+        return f"{sign}{_format_number(diff)}%"
+    sign = "+" if diff >= 0 else ""
+    return f"{sign}{_format_number(diff)}"
+
+
+def _normalize_model_row(spec, row, updates):
+    if not isinstance(row, dict):
+        return _missing_kpi_row(spec)
+
+    actual = _clean_str(row.get("actual"))
+    delta = _clean_str(row.get("delta"))
+    status = _normalize_status(row.get("status"))
+
+    if spec["kind"] == "quarter_outcome" and not _has_numeric_evidence(spec["source"], updates):
+        return _missing_kpi_row(spec)
+
+    if _is_missing_value(actual):
+        return _missing_kpi_row(spec)
+
+    if "%" in spec["target"] and "%" not in actual:
+        n = _extract_first_number(actual)
+        if n is not None:
+            actual = f"{_format_number(n)}%"
+    if spec["kind"] == "duration_threshold" and "hr" not in actual.lower() and "hour" not in actual.lower():
+        n = _extract_first_number(actual)
+        if n is not None:
+            actual = f"{_format_number(n)} hours"
+
+    if not _delta_valid(delta):
+        delta = _derive_delta(spec["target"], actual, spec["kind"])
+
+    if not status:
+        t = _target_number(spec["target"])
+        a = _extract_first_number(actual)
+        if a is None:
+            status = "missing"
+        elif spec["kind"] == "duration_threshold" and t is not None:
+            status = "on_track" if a <= t else "at_risk"
+        elif t is not None:
+            status = "on_track" if a >= t else "at_risk"
+        else:
+            status = "at_risk"
+
+    return {
+        "name": spec["name"],
+        "target": spec["target"],
+        "actual": actual,
+        "delta": delta if not _is_missing_value(delta) else "—",
+        "status": status,
+    }
+
+
+def _normalize_extracted_kpis(emp, raw_data, updates):
+    expected = _build_expected_kpis(emp.kpis)
+    extracted_rows = (raw_data or {}).get("kpis", [])
+    by_expected_idx = _match_extracted_kpi_rows(expected, extracted_rows)
+
+    normalized = []
+    for idx, spec in enumerate(expected):
+        row = by_expected_idx.get(idx)
+
+        if spec["kind"] == "count_week":
+            total = _extract_count_total_for_kpi(spec["source"], updates)
+            target = _target_number(spec["target"])
+            if total is None or target is None:
+                normalized.append(_missing_kpi_row(spec))
+                continue
+            delta = total - target
+            normalized.append({
+                "name": spec["name"],
+                "target": spec["target"],
+                "actual": _format_number(total),
+                "delta": f"+{_format_number(delta)}" if delta >= 0 else _format_number(delta),
+                "status": "on_track" if total >= target else "at_risk",
+            })
+            continue
+
+        if spec["kind"] == "duration_threshold":
+            avg_hours = _extract_duration_avg_hours(updates)
+            target = _target_number(spec["target"])
+            if avg_hours is None or target is None:
+                normalized.append(_missing_kpi_row(spec))
+                continue
+            delta = avg_hours - target
+            normalized.append({
+                "name": spec["name"],
+                "target": spec["target"],
+                "actual": f"{_format_number(avg_hours)} hours",
+                "delta": f"+{_format_number(delta)} hours" if delta >= 0 else f"{_format_number(delta)} hours",
+                "status": "on_track" if avg_hours <= target else "at_risk",
+            })
+            continue
+
+        normalized.append(_normalize_model_row(spec, row, updates))
+
+    return normalized
+
+
+def _validate_generated_updates(emp, updates, expected_days):
+    errors = []
+    days = [u.get("day") for u in updates]
+    expected_set = set(expected_days)
+    day_set = set(days)
+
+    if day_set != expected_set:
+        missing = [d for d in expected_days if d not in day_set]
+        extra = [d for d in days if d not in expected_set]
+        if missing:
+            errors.append(f"Missing required day(s): {', '.join(missing)}")
+        if extra:
+            errors.append(f"Unexpected day(s): {', '.join(extra)}")
+
+    if len(days) != len(day_set):
+        errors.append("Duplicate day entries are not allowed")
+
+    expected_kpis = _build_expected_kpis(emp.kpis)
+    has_count_week = any(spec["kind"] == "count_week" for spec in expected_kpis)
+    if has_count_week:
+        for update in updates:
+            if update["day"] != "friday" and _contains_week_total_language(update["content"]):
+                errors.append("Non-Friday update uses week-total phrasing for numeric KPI")
+                break
+
+        for spec in expected_kpis:
+            if spec["kind"] != "count_week":
+                continue
+            coverage = _count_metric_coverage(spec["source"], updates)
+            if coverage < len(expected_days):
+                errors.append(
+                    f"Count KPI '{spec['name']}' must include explicit daily increment evidence on all required days"
+                )
+
+            total = _extract_count_total_for_kpi(spec["source"], updates)
+            target = _target_number(spec["target"])
+            if total is not None and target and total > target * 2.5:
+                errors.append(f"Count KPI '{spec['name']}' appears to use weekly totals repeatedly")
+
+    return errors
+
+
+def _repair_generated_updates(updates, expected_days):
+    by_day = {u["day"]: u["content"] for u in updates if u.get("day") in WEEKDAYS and u.get("content")}
+    repaired = []
+    for day in expected_days:
+        content = by_day.get(day)
+        if not content:
+            content = "Quick update: made steady progress on core KPI work today and stayed responsive to stakeholders."
+        repaired.append({"day": day, "content": content})
+    return repaired
 
 
 def run_pipeline(app):
@@ -202,7 +753,8 @@ def _run_extract_stage(run, employees):
         total_c += result['completion_tokens']
 
         data = result['data']
-        for kpi in data.get('kpis', []):
+        normalized_kpis = _normalize_extracted_kpis(emp, data, emp_updates[emp.id])
+        for kpi in normalized_kpis:
             db.session.add(KpiExtraction(
                 employee_id=emp.id,
                 kpi_name=kpi.get('name', ''),
@@ -275,10 +827,14 @@ def is_pipeline_running():
         PipelineRun.status.in_(['pending', 'generating', 'extracting', 'reasoning'])
     ).all()
 
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     for run in stuck:
         try:
-            started = run.started_at.replace(tzinfo=None) if run.started_at else None
+            started = run.started_at
+            if started and started.tzinfo is None:
+                # SQLite commonly returns naive datetimes. In this app, run timestamps are
+                # written as UTC, so treat naive values as UTC for timeout checks.
+                started = started.replace(tzinfo=timezone.utc)
             age = (now - started).total_seconds() if started else 999
         except Exception:
             age = 999
@@ -308,6 +864,9 @@ def _clear_previous_data(current_run_id):
 
 def _generate_updates(emp):
     """Stage 1: Generate daily standup updates for an employee."""
+    expected_days = _infer_expected_submission_days(emp.hidden_truth)
+    days_list = ", ".join(day.title() for day in expected_days)
+
     system = (
         "You are writing casual Slack messages for a fictional company's #daily-standup channel.\n\n"
         "FORMATTING RULES (non-negotiable):\n"
@@ -325,28 +884,69 @@ def _generate_updates(emp):
         "- If the writing style or KPIs mention real brands, ignore those brand names and substitute "
         "from the fictional list above.\n\n"
         "SUBMISSION RULES:\n"
-        "- The number of updates MUST equal the number of days the employee actually submits.\n"
-        "- If the hidden truth says they skip certain days, return FEWER than 5 updates.\n"
-        "- Only include days they actually post.\n\n"
+        "- Default cadence is 5 updates: Monday through Friday.\n"
+        "- Only return fewer than 5 updates if hidden truth explicitly says they skip specific weekdays.\n"
+        "- Day values must be lowercase weekday strings: monday/tuesday/wednesday/thursday/friday.\n"
+        "- Return exactly one update per required day.\n\n"
+        "METRIC SEMANTICS (non-negotiable):\n"
+        "- For '/week' count KPIs, each daily update must report THAT DAY'S increment, not a running or weekly total.\n"
+        "- Do NOT repeat 'this week total' values across multiple days.\n"
+        "- Use consistent units for each KPI across all days (e.g., hours always in hours).\n"
+        "- Do not contradict prior day metrics.\n\n"
         "Return valid JSON: {\"updates\": [{\"day\": \"monday\", \"content\": \"...\"}]}"
     )
-    user = (
+
+    base_user = (
         f"Generate daily standup Slack messages for {emp.name}, "
         f"a {emp.role} at Lumen Collective (Series C UGC marketplace, 180 employees).\n\n"
+        f"Required submission days for this run: {days_list}.\n"
         f"Writing style: {emp.writing_style}\n"
-        f"KPIs: {emp.kpis}\n"
+        f"KPI targets: {emp.kpis}\n"
         f"Hidden truth to embed subtly: {emp.hidden_truth}\n\n"
         f"Each update should:\n"
         f"- Sound like a real Slack message, not a report\n"
         f"- Match the writing style exactly\n"
         f"- Reference fictional brand clients naturally (listed in system prompt)\n"
         f"- Embed the hidden truth subtly — don't make it obvious\n"
-        f"- Include realistic metrics that trend according to the hidden truth\n\n"
-        f"IMPORTANT: If the hidden truth says the employee skips certain days, "
-        f"do NOT generate updates for those days. Return ONLY the days they actually post.\n\n"
+        f"- Include realistic daily metrics that trend according to the hidden truth\n\n"
         f"Return JSON: {{\"updates\": [{{\"day\": \"monday\", \"content\": \"...\"}}]}}"
     )
-    return call_gpt(system, user)
+
+    retry_feedback = ""
+    last_result = None
+    normalized_updates = []
+    last_errors = []
+
+    for _ in range(3):
+        result = call_gpt(system, f"{base_user}{retry_feedback}")
+        raw_updates = result["data"].get("updates", result["data"].get("days", []))
+        normalized_updates = _normalize_generated_updates(raw_updates)
+        errors = _validate_generated_updates(emp, normalized_updates, expected_days)
+
+        if not errors:
+            result["data"] = {"updates": normalized_updates}
+            return result
+
+        last_result = result
+        last_errors = errors
+        retry_feedback = (
+            "\n\nPrevious output failed validation. Return corrected JSON only.\n"
+            + "\n".join(f"- {error}" for error in errors[:4])
+        )
+
+    repaired = _repair_generated_updates(normalized_updates, expected_days)
+    if repaired:
+        log.warning(
+            "Stage 1 auto-repaired updates for %s after validation errors: %s",
+            emp.name,
+            "; ".join(last_errors) if last_errors else "unknown",
+        )
+        if last_result is None:
+            last_result = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+        last_result["data"] = {"updates": repaired}
+        return last_result
+
+    raise ValueError(f"Unable to produce valid stage-1 updates for {emp.name}")
 
 
 def _extract_kpis(emp, updates):
@@ -358,13 +958,13 @@ def _extract_kpis(emp, updates):
         "You are a data extraction agent. Parse daily standup updates and extract "
         "structured KPI performance data. Do not interpret or judge — just extract. "
         "Return valid JSON.\n\n"
-        "IMPORTANT FORMATTING RULES:\n"
-        "- 'target', 'actual', and 'delta' must each be a SHORT string — a single number or "
-        "brief phrase. Examples: '25/week', '30', '+5', '-2', '3.2x', '85%'.\n"
-        "- Do NOT list per-day breakdowns in these fields. Summarize into one weekly figure.\n"
-        "- For 'actual': use the weekly total, weekly average, or latest value — whichever "
-        "matches how the target is expressed.\n"
-        "- For 'delta': the difference between actual and target as a single number (e.g. '+5', '-20%').\n\n"
+        "IMPORTANT EXTRACTION RULES:\n"
+        "- 'target', 'actual', and 'delta' must each be a short scalar string.\n"
+        "- Do not output per-day breakdowns in KPI rows.\n"
+        "- For '/week' COUNT KPIs: infer daily increments and return WEEKLY SUM as actual.\n"
+        "- For duration KPIs (like response time): return the WEEKLY AVERAGE as actual.\n"
+        "- For quarterly or outcome KPIs with no explicit numeric evidence in updates: status='missing', actual='—', delta='—'.\n"
+        "- Missing means insufficient evidence, not zero performance.\n\n"
         "SUBMISSION COUNTING:\n"
         "- Count exactly which days (Monday through Friday) have an update present.\n"
         "- If only 3 out of 5 days have an update, submission_rate must be '3/5'.\n"
@@ -375,12 +975,12 @@ def _extract_kpis(emp, updates):
         f"KPI targets: {emp.kpis}\n\n"
         f"Updates provided:\n{updates_text}\n\n"
         f"Extract:\n"
-        f"1. For each KPI: find the best single summary value from the updates and compare to target.\n"
+        f"1. For each KPI target, produce one KPI row with deterministic aggregation rules from system prompt.\n"
         f"2. Submission compliance: count exactly which days (Mon-Fri) have an update above. "
         f"If a day is not listed, it is MISSING — the employee did not submit that day.\n\n"
         f"Return JSON:\n"
         f"{{\n"
-        f"  \"kpis\": [{{\"name\": \"short KPI name\", \"target\": \"single value\", \"actual\": \"single value\", \"delta\": \"+/- single value\", \"status\": \"on_track|at_risk|missing\"}}],\n"
+        f"  \"kpis\": [{{\"name\": \"short KPI name\", \"target\": \"single value\", \"actual\": \"single value\", \"delta\": \"+/- single value or —\", \"status\": \"on_track|at_risk|missing\"}}],\n"
         f"  \"submission_rate\": \"X/5\",\n"
         f"  \"days_submitted\": [\"monday\", \"tuesday\", ...]\n"
         f"}}"
