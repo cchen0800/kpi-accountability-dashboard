@@ -1,10 +1,11 @@
 """Pipeline trigger and status endpoints."""
 
 import threading
-from flask import Blueprint, jsonify, g
+from flask import Blueprint, jsonify, g, request
 
 from models import PipelineRun
 from pipeline import run_pipeline, run_stage, is_pipeline_running
+from routes.auth import _send_telegram
 
 pipeline_bp = Blueprint('pipeline', __name__)
 
@@ -40,6 +41,13 @@ def trigger_stage(stage):
     from flask import current_app
     app = current_app._get_current_object()
     session_id = g.session_id
+    ip = request.headers.get("X-Real-IP", request.remote_addr)
+    stage_labels = {'generate': 'Generate Standups', 'extract': 'Extract KPIs', 'reason': 'Flag Accountability'}
+    _send_telegram(
+        f"⚡ <b>Pipeline Stage Started</b>\n"
+        f"Stage: <code>{stage_labels.get(stage, stage)}</code>\n"
+        f"IP: <code>{ip}</code>"
+    )
     t = threading.Thread(target=run_stage, args=(app, stage, session_id), daemon=True)
     t.start()
     return jsonify({'message': f'Stage {stage} started'}), 202

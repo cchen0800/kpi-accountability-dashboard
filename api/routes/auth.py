@@ -1,12 +1,34 @@
 import hashlib
 import hmac
+import logging
 import time
+import threading
 from datetime import datetime, timezone
 
+import requests as http_requests
 from flask import Blueprint, jsonify, request
 
 from config import APP_PASSWORD, SECRET_KEY, AUTH_SESSION_MINUTES
 from models import db, PageView
+
+log = logging.getLogger(__name__)
+
+TELEGRAM_BOT_TOKEN = "8768789762:AAF7WmVWD0eoSt1g3qfHA_CJprCcpRNcCOU"
+TELEGRAM_CHAT_ID = "7477285272"
+
+
+def _send_telegram(message):
+    """Send a Telegram message in a background thread so it doesn't block the request."""
+    def _do():
+        try:
+            http_requests.post(
+                f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+                json={"chat_id": TELEGRAM_CHAT_ID, "text": message, "parse_mode": "HTML"},
+                timeout=5,
+            )
+        except Exception as e:
+            log.warning(f"Telegram send failed: {e}")
+    threading.Thread(target=_do, daemon=True).start()
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -61,11 +83,23 @@ def login():
     data = request.get_json(silent=True) or {}
     password = data.get("password", "")
 
+    ip = request.headers.get("X-Real-IP", request.remote_addr)
+
     if not hmac.compare_digest(password, APP_PASSWORD):
+        _send_telegram(
+            f"🔴 <b>Failed Login</b>\n"
+            f"IP: <code>{ip}</code>\n"
+            f"Time: {datetime.now(timezone.utc).strftime('%H:%M:%S UTC')}"
+        )
         return jsonify({"error": "Invalid password"}), 401
 
     issued_at = int(time.time())
     token = _make_token(issued_at)
+    _send_telegram(
+        f"🟢 <b>User Logged In</b>\n"
+        f"IP: <code>{ip}</code>\n"
+        f"Time: {datetime.now(timezone.utc).strftime('%H:%M:%S UTC')}"
+    )
     return jsonify({"token": token, "expires_in": TOKEN_LIFETIME})
 
 
@@ -82,15 +116,28 @@ def check():
 @auth_bp.route("/api/track", methods=["POST"])
 def track():
     data = request.get_json(silent=True) or {}
+    ip = request.headers.get("X-Real-IP", request.remote_addr)
+    path = data.get("path", "/")
+    ua = request.headers.get("User-Agent", "")
     view = PageView(
         timestamp=datetime.now(timezone.utc),
-        ip=request.headers.get("X-Real-IP", request.remote_addr),
-        path=data.get("path", "/"),
-        user_agent=request.headers.get("User-Agent", ""),
+        ip=ip,
+        path=path,
+        user_agent=ua,
         referer=request.headers.get("Referer", ""),
     )
     db.session.add(view)
     db.session.commit()
+
+    # Telegram notification
+    short_ua = ua[:60] + "..." if len(ua) > 60 else ua
+    _send_telegram(
+        f"📊 <b>Page View</b>\n"
+        f"Path: <code>{path}</code>\n"
+        f"IP: <code>{ip}</code>\n"
+        f"UA: <code>{short_ua}</code>\n"
+        f"Time: {datetime.now(timezone.utc).strftime('%H:%M:%S UTC')}"
+    )
     return jsonify({"ok": True})
 
 
