@@ -161,40 +161,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Pipeline link banner */}
-        <div
-          className="card animate-in"
-          style={{
-            animationDelay: '0.08s',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-          }}
-          onClick={() => navigate('/pipeline')}
-          onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--accent)'}
-          onMouseLeave={e => e.currentTarget.style.borderColor = ''}
-        >
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>
-              Agentic Analysis Pipeline
-            </div>
-            <div style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500, marginTop: 2 }}>
-              Run the three-stage GPT pipeline to regenerate analysis
-            </div>
-          </div>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 4,
-            fontSize: 12, fontWeight: 600, color: 'var(--accent)',
-          }}>
-            Go to Pipeline
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
-            </svg>
-          </div>
-        </div>
-
         {/* Team rollup */}
         {!loading && <TeamRollup employees={employees} />}
 

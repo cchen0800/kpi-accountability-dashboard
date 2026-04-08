@@ -12,6 +12,7 @@ const FLAG_STYLES = {
 export default function EmployeeCard({ employee, index }) {
   const navigate = useNavigate()
   const analysis = employee.analysis
+  const kpis = employee.kpi_extractions || []
   const flagType = analysis?.flag_type || 'none'
   const flagStyle = FLAG_STYLES[flagType] || FLAG_STYLES.none
   const flagLabel = flagType === 'other' && analysis?.flag_label ? analysis.flag_label : flagStyle.label
@@ -73,6 +74,37 @@ export default function EmployeeCard({ employee, index }) {
               {analysis.submission_rate} days
             </span>
           </div>
+
+          {/* KPIs */}
+          {kpis.length > 0 && (
+            <div style={{ marginTop: 10 }}>
+              {kpis.map((kpi, i) => {
+                const isRisk = kpi.status === 'at_risk'
+                const isMissing = kpi.status === 'missing'
+                const statusColor = isRisk ? 'var(--warning)' : isMissing ? 'var(--danger)' : 'var(--success)'
+                return (
+                  <div key={i} style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    padding: '4px 0',
+                    borderBottom: i < kpis.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                  }}>
+                    <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-secondary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {kpi.kpi_name}
+                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginLeft: 8 }}>
+                      <span className="mono" style={{ fontSize: 11, color: 'var(--text-ghost)' }}>
+                        {kpi.actual || '—'}<span style={{ color: 'var(--text-ghost)', margin: '0 2px' }}>/</span>{kpi.target || '—'}
+                      </span>
+                      <div style={{
+                        width: 6, height: 6, borderRadius: '50%',
+                        background: statusColor,
+                      }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
           {/* Summary */}
           <div style={{

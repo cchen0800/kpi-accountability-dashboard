@@ -22,12 +22,15 @@ def list_employees():
             analysis = AnalysisResult.query.filter_by(
                 employee_id=emp.id, pipeline_run_id=latest_run.id
             ).first()
-            if analysis:
-                data['analysis'] = analysis.to_dict()
-            else:
-                data['analysis'] = None
+            data['analysis'] = analysis.to_dict() if analysis else None
+
+            kpis = KpiExtraction.query.filter_by(
+                employee_id=emp.id, pipeline_run_id=latest_run.id
+            ).all()
+            data['kpi_extractions'] = [k.to_dict() for k in kpis]
         else:
             data['analysis'] = None
+            data['kpi_extractions'] = []
 
         result.append(data)
 

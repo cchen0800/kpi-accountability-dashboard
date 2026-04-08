@@ -134,6 +134,20 @@ def stage_output(stage):
         return jsonify({'previews': previews, 'employee_count': len(employees)})
 
 
+@pipeline_bp.route('/api/pipeline/reset', methods=['POST'])
+def reset_pipeline():
+    if is_pipeline_running():
+        return jsonify({'error': 'Pipeline is running'}), 409
+
+    from models import db, GeneratedUpdate, KpiExtraction, AnalysisResult
+    GeneratedUpdate.query.delete()
+    KpiExtraction.query.delete()
+    AnalysisResult.query.delete()
+    PipelineRun.query.delete()
+    db.session.commit()
+    return jsonify({'message': 'Pipeline data cleared'}), 200
+
+
 @pipeline_bp.route('/api/pipeline/last-run')
 def last_run():
     run = PipelineRun.query.filter_by(status='complete').order_by(PipelineRun.id.desc()).first()

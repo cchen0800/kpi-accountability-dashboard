@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAtom } from 'jotai'
-import { pipelineStatusAtom } from '../lib/store/pipeline'
-import { fetchStageOutput } from '../lib/api/pipeline'
+import { motion, AnimatePresence } from 'framer-motion'
+import { pipelineStatusAtom, lastRunAtom } from '../lib/store/pipeline'
+import { fetchStageOutput, fetchLastRun } from '../lib/api/pipeline'
 import PipelineControl from '../components/PipelineControl'
 
 const FLAG_STYLES = {
@@ -35,20 +36,32 @@ function getInitials(name) {
 export default function Pipeline() {
   const navigate = useNavigate()
   const [status] = useAtom(pipelineStatusAtom)
+  const [lastRun, setLastRun] = useAtom(lastRunAtom)
   const [generateOutput, setGenerateOutput] = useState(null)
   const [extractOutput, setExtractOutput] = useState(null)
   const [reasonOutput, setReasonOutput] = useState(null)
   const [activeTab, setActiveTab] = useState(null)
+  const [direction, setDirection] = useState(0)
+  const [sessionRuns, setSessionRuns] = useState(0)
+  const lastRunIdRef = useRef(null)
+
+  const TAB_INDEX = { generate: 0, extract: 1, reason: 2 }
+
+  const switchTab = (key) => {
+    if (key === activeTab) return
+    setDirection(TAB_INDEX[key] > TAB_INDEX[activeTab] ? 1 : -1)
+    setActiveTab(key)
+  }
 
   const isGenerateDone = ['stage_generate_done', 'extracting', 'stage_extract_done', 'reasoning', 'complete'].includes(status.status)
   const isExtractDone = ['stage_extract_done', 'reasoning', 'complete'].includes(status.status)
   const isReasonDone = status.status === 'complete'
 
-  // Auto-advance tab to most recently completed stage
+  // Auto-advance tab to most recently completed stage (always forward)
   useEffect(() => {
-    if (isReasonDone) setActiveTab('reason')
-    else if (isExtractDone) setActiveTab('extract')
-    else if (isGenerateDone) setActiveTab('generate')
+    if (isReasonDone) { setDirection(1); setActiveTab('reason') }
+    else if (isExtractDone) { setDirection(1); setActiveTab('extract') }
+    else if (isGenerateDone) { setDirection(1); setActiveTab('generate') }
     else setActiveTab(null)
   }, [isGenerateDone, isExtractDone, isReasonDone])
 
@@ -62,9 +75,21 @@ export default function Pipeline() {
     if (isReasonDone && !reasonOutput) {
       try { setReasonOutput(await fetchStageOutput('reason')) } catch {}
     }
-  }, [isGenerateDone, isExtractDone, isReasonDone, generateOutput, extractOutput, reasonOutput])
+    // Refresh lastRun when any stage completes
+    try { setLastRun(await fetchLastRun()) } catch {}
+  }, [isGenerateDone, isExtractDone, isReasonDone, generateOutput, extractOutput, reasonOutput, setLastRun])
 
   useEffect(() => { loadOutputs() }, [loadOutputs])
+
+  // Track session run count
+  useEffect(() => {
+    if (lastRun?.has_run && lastRun.id && lastRun.id !== lastRunIdRef.current) {
+      if (lastRunIdRef.current !== null) {
+        setSessionRuns(prev => prev + 1)
+      }
+      lastRunIdRef.current = lastRun.id
+    }
+  }, [lastRun])
 
   // Reset outputs when a new run starts
   useEffect(() => {
@@ -87,19 +112,6 @@ export default function Pipeline() {
 
   return (
     <div style={{ padding: '24px 28px 40px', maxWidth: 1200, margin: '0 auto' }}>
-      {/* Header */}
-      <div className="animate-in" style={{
-        marginBottom: 24, paddingBottom: 18,
-        borderBottom: '1px solid var(--border)',
-      }}>
-        <h1 style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.3px' }}>
-          Agentic Analysis Pipeline
-        </h1>
-        <div style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500, marginTop: 2 }}>
-          Three independent GPT agents process data sequentially — generate synthetic standups, extract KPIs, and flag accountability gaps
-        </div>
-      </div>
-
       {/* Pipeline control (stage cards) */}
       <PipelineControl onComplete={loadOutputs} onReset={() => {
         setGenerateOutput(null)
@@ -123,7 +135,7 @@ export default function Pipeline() {
               return (
                 <button
                   key={tab.key}
-                  onClick={() => available && setActiveTab(tab.key)}
+                  onClick={() => available && switchTab(tab.key)}
                   disabled={!available}
                   style={{
                     flex: 1,
@@ -167,11 +179,31 @@ export default function Pipeline() {
           </div>
 
           {/* Tab content */}
-          <div style={{ padding: '18px 20px' }}>
+          <div style={{ padding: '18px 20px', overflow: 'hidden', height: 340 }}>
+            <AnimatePresence mode="wait" initial={false} custom={direction}>
+            <motion.div
+              key={activeTab}
+              custom={direction}
+              variants={{
+                initial: (d) => ({ x: d * 80, opacity: 0 }),
+                animate: { x: 0, opacity: 1 },
+                exit: (d) => ({ x: d * -80, opacity: 0 }),
+              }}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              style={{ height: '100%', overflowY: 'auto' }}
+            >
             {/* Generate panel */}
             {activeTab === 'generate' && generateOutput && (
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}
+                >
                   <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500 }}>
                     Sample: first standup from each employee
                   </div>
@@ -182,11 +214,14 @@ export default function Pipeline() {
                   }}>
                     {generateOutput.employee_count} employees x 5 days = {generateOutput.total} standups
                   </span>
-                </div>
+                </motion.div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {generateOutput.previews.map((msg, i) => (
-                    <div
+                    <motion.div
                       key={i}
+                      initial={{ opacity: 0, y: 12 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.35, delay: 0.1 + i * 0.08, ease: [0.4, 0, 0.2, 1] }}
                       style={{
                         display: 'flex', gap: 10, padding: '8px 12px',
                         borderRadius: 'var(--radius-sm)',
@@ -217,7 +252,7 @@ export default function Pipeline() {
                           {msg.content}
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))}
                 </div>
               </div>
@@ -226,7 +261,12 @@ export default function Pipeline() {
             {/* Extract panel */}
             {activeTab === 'extract' && extractOutput && (
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}
+                >
                   <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500 }}>
                     Top KPI per employee (hidden truth NOT provided to this agent)
                   </div>
@@ -237,7 +277,7 @@ export default function Pipeline() {
                   }}>
                     {extractOutput.total} KPIs extracted across {extractOutput.employee_count} employees
                   </span>
-                </div>
+                </motion.div>
                 <div style={{ overflowX: 'auto' }}>
                   <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                     <thead>
@@ -258,7 +298,13 @@ export default function Pipeline() {
                       {extractOutput.previews.map((row, i) => {
                         const statusStyle = STATUS_STYLES[row.status] || STATUS_STYLES.missing
                         return (
-                          <tr key={i} style={{ borderBottom: '1px solid var(--border-subtle)' }}>
+                          <motion.tr
+                            key={i}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.3, delay: 0.1 + i * 0.08, ease: [0.4, 0, 0.2, 1] }}
+                            style={{ borderBottom: '1px solid var(--border-subtle)' }}
+                          >
                             <td style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--text)' }}>
                               {row.name}
                               <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--text-ghost)' }}>{row.role}</div>
@@ -280,7 +326,7 @@ export default function Pipeline() {
                             <td className="mono" style={{ padding: '8px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>
                               {row.submission_rate}
                             </td>
-                          </tr>
+                          </motion.tr>
                         )
                       })}
                     </tbody>
@@ -292,7 +338,12 @@ export default function Pipeline() {
             {/* Reason panel */}
             {activeTab === 'reason' && reasonOutput && (
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}
+                >
                   <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500 }}>
                     Flags assigned independently by reasoning agent (hidden truth NOT provided)
                   </div>
@@ -303,43 +354,51 @@ export default function Pipeline() {
                   }}>
                     {reasonOutput.employee_count} employees analyzed
                   </span>
-                </div>
+                </motion.div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {reasonOutput.previews.map((row, i) => {
                     const flagStyle = FLAG_STYLES[row.flag_type] || FLAG_STYLES.none
                     const flagLabel = row.flag_type === 'other' && row.flag_label ? row.flag_label : flagStyle.label
                     return (
-                      <div key={i} style={{
-                        display: 'flex', alignItems: 'flex-start', gap: 12,
-                        padding: '10px 14px',
-                        borderRadius: 'var(--radius-sm)',
-                        background: 'var(--bg)',
-                        border: `1px solid ${flagStyle.color}22`,
-                      }}>
-                        <div style={{ flexShrink: 0, minWidth: 100 }}>
-                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{row.name}</div>
-                          <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--text-ghost)', marginTop: 1 }}>{row.role}</div>
-                        </div>
-                        <span className="badge" style={{
-                          background: flagStyle.bg, color: flagStyle.color,
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.35, delay: 0.1 + i * 0.08, ease: [0.4, 0, 0.2, 1] }}
+                        style={{
+                          padding: '12px 14px',
+                          borderRadius: 'var(--radius-sm)',
+                          background: 'var(--bg)',
                           border: `1px solid ${flagStyle.color}22`,
-                          fontSize: 10, flexShrink: 0,
-                        }}>
-                          {flagLabel}
-                        </span>
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{row.name}</span>
+                          <span style={{ fontSize: 10.5, fontWeight: 500, color: 'var(--text-ghost)' }}>{row.role}</span>
+                          <span className="badge" style={{
+                            background: flagStyle.bg, color: flagStyle.color,
+                            border: `1px solid ${flagStyle.color}22`,
+                            fontSize: 10,
+                          }}>
+                            {flagLabel}
+                          </span>
+                        </div>
                         <div style={{
-                          fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500,
-                          lineHeight: 1.5, flex: 1,
+                          fontSize: 12.5, color: 'var(--text-secondary)', fontWeight: 400,
+                          lineHeight: 1.55,
                         }}>
                           {row.summary}
                         </div>
-                      </div>
+                      </motion.div>
                     )
                   })}
                 </div>
 
                 {/* View dashboard button */}
-                <button
+                <motion.button
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.1 + reasonOutput.previews.length * 0.08 }}
                   onClick={() => navigate('/')}
                   style={{
                     marginTop: 16,
@@ -366,10 +425,48 @@ export default function Pipeline() {
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
                   </svg>
-                </button>
+                </motion.button>
               </div>
             )}
+            </motion.div>
+            </AnimatePresence>
           </div>
+        </div>
+      )}
+
+      {/* Run metadata footer */}
+      {lastRun?.has_run && (
+        <div className="animate-in" style={{
+          animationDelay: '0.3s',
+          marginTop: 24,
+          padding: '12px 16px',
+          background: 'var(--bg-raised)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-sm)',
+          display: 'flex',
+          justifyContent: 'center',
+          gap: 32,
+        }}>
+          {[
+            { label: 'Session Runs', value: sessionRuns.toString() },
+            { label: 'Tokens Used', value: lastRun.total_tokens?.toLocaleString() },
+            { label: 'Cost', value: `$${(lastRun.total_cost_cents / 100).toFixed(4)}` },
+            { label: 'Duration', value: lastRun.duration_seconds ? `${lastRun.duration_seconds.toFixed(1)}s` : '—' },
+          ].map(item => (
+            <div key={item.label} style={{ textAlign: 'center' }}>
+              <div style={{
+                fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+                letterSpacing: '0.8px', color: 'var(--text-ghost)',
+              }}>
+                {item.label}
+              </div>
+              <div className="mono" style={{
+                fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginTop: 2,
+              }}>
+                {item.value || '—'}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

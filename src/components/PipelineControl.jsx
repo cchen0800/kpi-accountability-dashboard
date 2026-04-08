@@ -1,7 +1,8 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { useAtom } from 'jotai'
-import { pipelineStatusAtom } from '../lib/store/pipeline'
-import { triggerStage, fetchPipelineStatus } from '../lib/api/pipeline'
+import { pipelineStatusAtom, lastRunAtom } from '../lib/store/pipeline'
+import { employeesAtom } from '../lib/store/employees'
+import { triggerStage, fetchPipelineStatus, resetPipeline } from '../lib/api/pipeline'
 
 const STAGES = [
   {
@@ -73,6 +74,8 @@ function getStageState(stageIndex, pipelineStatus) {
 
 export default function PipelineControl({ onComplete, onReset }) {
   const [status, setStatus] = useAtom(pipelineStatusAtom)
+  const [, setLastRun] = useAtom(lastRunAtom)
+  const [, setEmployees] = useAtom(employeesAtom)
   const pollRef = useRef(null)
 
   const isRunning = ['pending', 'generating', 'extracting', 'reasoning'].includes(status.status)
@@ -129,8 +132,11 @@ export default function PipelineControl({ onComplete, onReset }) {
         </div>
         {!isRunning && status.status !== 'idle' && (
           <button
-            onClick={() => {
+            onClick={async () => {
+              try { await resetPipeline() } catch {}
               setStatus({ status: 'idle', stage: null, error: null })
+              setLastRun(null)
+              setEmployees([])
               if (onReset) onReset()
             }}
             style={{
