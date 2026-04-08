@@ -15,7 +15,7 @@ from datetime import datetime, timezone
 
 from models import db, Employee, PipelineRun, GeneratedUpdate, KpiExtraction, AnalysisResult
 from openai_client import call_gpt, estimate_cost_cents
-from config import OPENAI_MODEL, OPENAI_TIMEOUT_SECONDS
+from config import OPENAI_MODEL, OPENAI_TIMEOUT_SECONDS, SYNTHETIC_DATA_PATH
 
 log = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ REASON_WORKER_TIMEOUT_SECONDS = max(OPENAI_TIMEOUT_SECONDS + 5.0, 30.0)
 
 def _load_standup_sets():
     """Load pre-written standup sets from synthetic_data.json."""
-    json_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'synthetic_data.json')
+    json_path = SYNTHETIC_DATA_PATH
     with open(json_path, 'r', encoding='utf-8') as f:
         data = json.load(f)
     return data.get('standup_sets', [])

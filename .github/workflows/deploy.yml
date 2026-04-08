@@ -17,4 +17,6 @@ jobs:
           script: |
             cd /home/chris/kpi-accountability-dashboard
             git pull origin main
+            docker compose down
+            docker volume rm kpi-accountability-dashboard_static_dist 2>/dev/null || true
             docker compose up -d --build
