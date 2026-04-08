@@ -9,8 +9,8 @@ function git(cmd, fallback) {
 const commitCount = git('git rev-list --count HEAD', '0')
 const commitHash = git('git rev-parse --short HEAD', 'unknown')
 const buildDate = new Date().toISOString()
-const devPort = Number(process.env.VITE_DEV_PORT || 3000)
-const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || 'http://localhost:5000'
+const devPort = Number(process.env.VITE_DEV_PORT || 3100)
+const apiProxyTarget = process.env.VITE_API_PROXY_TARGET || 'http://localhost:5100'
 
 export default defineConfig({
   plugins: [react()],

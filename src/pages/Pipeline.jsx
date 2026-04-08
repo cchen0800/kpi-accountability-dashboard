@@ -205,7 +205,7 @@ export default function Pipeline() {
               initial="initial"
               animate="animate"
               exit="exit"
-              transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+              transition={{ duration: 0.12, ease: [0.4, 0, 0.2, 1] }}
             >
             {/* Generate panel */}
             {activeTab === 'generate' && generateOutput && (
@@ -280,7 +280,7 @@ export default function Pipeline() {
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}
                 >
                   <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500 }}>
-                    Top KPI per employee (hidden truth NOT provided to this agent)
+                    All KPIs per employee (hidden truth NOT provided to this agent)
                   </div>
                   <span style={{
                     fontSize: 11, fontWeight: 600, color: 'var(--accent)',
@@ -307,40 +307,70 @@ export default function Pipeline() {
                       </tr>
                     </thead>
                     <tbody>
-                      {extractOutput.previews.map((row, i) => {
-                        const statusStyle = STATUS_STYLES[row.status] || STATUS_STYLES.missing
-                        return (
-                          <motion.tr
-                            key={i}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.3, delay: 0.1 + i * 0.08, ease: [0.4, 0, 0.2, 1] }}
-                            style={{ borderBottom: '1px solid var(--border-subtle)' }}
-                          >
-                            <td style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--text)' }}>
-                              {row.name}
-                              <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--text-ghost)' }}>{row.role}</div>
-                            </td>
-                            <td style={{ padding: '8px 10px', color: 'var(--text-secondary)', fontWeight: 500 }}>{row.kpi_name}</td>
-                            <td className="mono" style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>{row.target}</td>
-                            <td className="mono" style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>{row.actual}</td>
-                            <td className="mono" style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>{row.delta}</td>
-                            <td style={{ padding: '8px 10px' }}>
-                              <span className="badge" style={{
-                                background: statusStyle.color + '18',
-                                color: statusStyle.color,
-                                border: `1px solid ${statusStyle.color}22`,
-                                fontSize: 10,
-                              }}>
-                                {statusStyle.label}
-                              </span>
-                            </td>
-                            <td className="mono" style={{ padding: '8px 10px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                              {row.submission_rate}
-                            </td>
-                          </motion.tr>
-                        )
-                      })}
+                      {(() => {
+                        // Group rows by employee name for rowSpan
+                        const rows = extractOutput.previews
+                        const groupCounts = {}
+                        const firstInGroup = {}
+                        rows.forEach((row, i) => {
+                          if (!(row.name in groupCounts)) {
+                            groupCounts[row.name] = 0
+                            firstInGroup[row.name] = i
+                          }
+                          groupCounts[row.name]++
+                        })
+
+                        // Track group index for alternating backgrounds
+                        const groupNames = [...new Set(rows.map(r => r.name))]
+                        const groupIndex = {}
+                        groupNames.forEach((name, gi) => { groupIndex[name] = gi })
+
+                        return rows.map((row, i) => {
+                          const statusStyle = STATUS_STYLES[row.status] || STATUS_STYLES.missing
+                          const isFirst = firstInGroup[row.name] === i
+                          const isLast = firstInGroup[row.name] + groupCounts[row.name] - 1 === i
+                          const span = groupCounts[row.name]
+                          const isEvenGroup = groupIndex[row.name] % 2 === 0
+                          return (
+                            <motion.tr
+                              key={i}
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.3, delay: 0.1 + i * 0.04, ease: [0.4, 0, 0.2, 1] }}
+                              style={{
+                                borderBottom: isLast ? '2px solid var(--border)' : '1px solid var(--border-subtle)',
+                                background: isEvenGroup ? 'transparent' : 'var(--bg-raised)',
+                              }}
+                            >
+                              {isFirst && (
+                                <td rowSpan={span} style={{ padding: '8px 10px', fontWeight: 600, color: 'var(--text)', verticalAlign: 'top', borderRight: '1px solid var(--border-subtle)' }}>
+                                  {row.name}
+                                  <div style={{ fontSize: 10, fontWeight: 500, color: 'var(--text-ghost)' }}>{row.role}</div>
+                                </td>
+                              )}
+                              <td style={{ padding: '8px 10px', color: 'var(--text-secondary)', fontWeight: 500 }}>{row.kpi_name}</td>
+                              <td className="mono" style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>{row.target}</td>
+                              <td className="mono" style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>{row.actual}</td>
+                              <td className="mono" style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>{row.delta}</td>
+                              <td style={{ padding: '8px 10px' }}>
+                                <span className="badge" style={{
+                                  background: statusStyle.color + '18',
+                                  color: statusStyle.color,
+                                  border: `1px solid ${statusStyle.color}22`,
+                                  fontSize: 10,
+                                }}>
+                                  {statusStyle.label}
+                                </span>
+                              </td>
+                              {isFirst && (
+                                <td rowSpan={span} className="mono" style={{ padding: '8px 10px', color: 'var(--text-secondary)', fontWeight: 600, verticalAlign: 'top', borderLeft: '1px solid var(--border-subtle)' }}>
+                                  {row.submission_rate}
+                                </td>
+                              )}
+                            </motion.tr>
+                          )
+                        })
+                      })()}
                     </tbody>
                   </table>
                 </div>

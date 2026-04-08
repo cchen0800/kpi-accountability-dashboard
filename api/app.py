@@ -31,7 +31,7 @@ def create_app():
     # CORS
     origins = [CORS_ORIGIN]
     if FLASK_DEBUG:
-        origins.extend(["http://localhost:5173", "http://localhost:5000"])
+        origins.extend(["http://localhost:3100", "http://localhost:5100"])
     CORS(app, origins=origins, supports_credentials=True)
 
     # Proxy fix for nginx
@@ -94,5 +94,5 @@ app = create_app()
 
 if __name__ == "__main__":
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "5000"))
+    port = int(os.getenv("PORT", "5100"))
     app.run(debug=FLASK_DEBUG, port=port, host=host)

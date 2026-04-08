@@ -45,6 +45,8 @@ def trigger_stage(stage):
 
 @pipeline_bp.route('/api/pipeline/status')
 def pipeline_status():
+    # Re-use zombie cleanup on every poll so stale in-progress runs don't linger forever.
+    is_pipeline_running()
     run = PipelineRun.query.order_by(PipelineRun.id.desc()).first()
     if not run:
         return jsonify({'status': 'idle', 'stage': None})
@@ -96,13 +98,13 @@ def stage_output(stage):
 
         previews = []
         for emp_id, emp in employees.items():
-            kpi = KpiExtraction.query.filter_by(
+            kpis = KpiExtraction.query.filter_by(
                 employee_id=emp_id, pipeline_run_id=run.id
-            ).first()
+            ).all()
             updates_count = GeneratedUpdate.query.filter_by(
                 employee_id=emp_id, pipeline_run_id=run.id
             ).count()
-            if kpi:
+            for kpi in kpis:
                 previews.append({
                     'name': emp.name, 'role': emp.role,
                     'kpi_name': kpi.kpi_name, 'target': kpi.target,

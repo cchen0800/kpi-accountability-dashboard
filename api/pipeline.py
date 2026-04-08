@@ -9,18 +9,19 @@ Stage 3 (Reasoning): GPT reasons over extracted data to assign flags + narrative
 import json
 import logging
 import re
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from datetime import datetime, timezone
 
 from models import db, Employee, PipelineRun, GeneratedUpdate, KpiExtraction, AnalysisResult
 from openai_client import call_gpt, estimate_cost_cents
-from config import OPENAI_MODEL
+from config import OPENAI_MODEL, OPENAI_TIMEOUT_SECONDS
 
 log = logging.getLogger(__name__)
 
 FICTIONAL_BRANDS = "Northwind Athletics, Petalcrest Beauty, Harborline Foods, Ridgeway Outdoors, Cinderhouse Coffee"
 WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday"]
 MISSING_TOKENS = {"", "-", "—", "n/a", "na", "unknown", "none", "not provided"}
+REASON_WORKER_TIMEOUT_SECONDS = max(OPENAI_TIMEOUT_SECONDS + 5.0, 30.0)
 
 
 def _as_kpi_list(raw_kpis):
@@ -117,6 +118,23 @@ def _contains_week_total_language(content):
 
 def _clean_str(value):
     return str(value or "").strip()
+
+
+def _coerce_text(value):
+    """Normalize GPT output fields to plain text for DB storage."""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, list):
+        parts = [_coerce_text(item) for item in value]
+        return "\n".join(part for part in parts if part)
+    if isinstance(value, dict):
+        try:
+            return json.dumps(value, ensure_ascii=False)
+        except Exception:
+            return str(value)
+    return str(value).strip()
 
 
 def _is_missing_value(value):
@@ -433,10 +451,8 @@ def _normalize_model_row(spec, row, updates):
     delta = _clean_str(row.get("delta"))
     status = _normalize_status(row.get("status"))
 
-    if spec["kind"] == "quarter_outcome" and not _has_numeric_evidence(spec["source"], updates):
-        return _missing_kpi_row(spec)
-
     if _is_missing_value(actual):
+        # For quarter_outcome KPIs, missing actual is expected when updates lack numeric evidence
         return _missing_kpi_row(spec)
 
     if "%" in spec["target"] and "%" not in actual:
@@ -482,6 +498,10 @@ def _normalize_extracted_kpis(emp, raw_data, updates):
         row = by_expected_idx.get(idx)
 
         if spec["kind"] == "count_week":
+            # Prefer GPT-extracted values; fall back to regex parsing
+            if row and not _is_missing_value(_clean_str(row.get("actual"))):
+                normalized.append(_normalize_model_row(spec, row, updates))
+                continue
             total = _extract_count_total_for_kpi(spec["source"], updates)
             target = _target_number(spec["target"])
             if total is None or target is None:
@@ -498,6 +518,10 @@ def _normalize_extracted_kpis(emp, raw_data, updates):
             continue
 
         if spec["kind"] == "duration_threshold":
+            # Prefer GPT-extracted values; fall back to regex parsing
+            if row and not _is_missing_value(_clean_str(row.get("actual"))):
+                normalized.append(_normalize_model_row(spec, row, updates))
+                continue
             avg_hours = _extract_duration_avg_hours(updates)
             target = _target_number(spec["target"])
             if avg_hours is None or target is None:
@@ -611,7 +635,13 @@ def run_pipeline(app):
                      run.id, run.total_tokens, run.total_cost_cents / 100)
 
         except Exception as e:
-            log.exception("Pipeline [%d] failed: %s", run.id, e)
+            db.session.rollback()
+            run_id = getattr(run, 'id', 'unknown')
+            log.exception("Pipeline [%s] failed: %s", run_id, e)
+            if isinstance(run_id, int):
+                run = db.session.get(PipelineRun, run_id)
+            if run is None:
+                return
             run.status = 'error'
             run.error = str(e)
             run.completed_at = datetime.now(timezone.utc)
@@ -675,7 +705,13 @@ def run_stage(app, stage):
             log.info("Pipeline [%d] Stage '%s' complete.", run.id, stage)
 
         except Exception as e:
-            log.exception("Pipeline [%d] stage '%s' failed: %s", run.id, stage, e)
+            db.session.rollback()
+            run_id = getattr(run, 'id', 'unknown')
+            log.exception("Pipeline [%s] stage '%s' failed: %s", run_id, stage, e)
+            if isinstance(run_id, int):
+                run = db.session.get(PipelineRun, run_id)
+            if run is None:
+                return
             run.status = 'error'
             run.error = str(e)
             run.completed_at = datetime.now(timezone.utc)
@@ -748,12 +784,18 @@ def _run_extract_stage(run, employees):
 
     total_p, total_c = 0, 0
     for future, emp in futures.items():
-        result = future.result()
-        total_p += result['prompt_tokens']
-        total_c += result['completion_tokens']
+        try:
+            result = future.result()
+            total_p += result['prompt_tokens']
+            total_c += result['completion_tokens']
 
-        data = result['data']
-        normalized_kpis = _normalize_extracted_kpis(emp, data, emp_updates[emp.id])
+            data = result['data']
+            normalized_kpis = _normalize_extracted_kpis(emp, data, emp_updates[emp.id])
+        except Exception:
+            log.exception("Stage 2 extraction failed for %s — inserting missing KPI rows", emp.name)
+            expected = _build_expected_kpis(emp.kpis)
+            normalized_kpis = [_missing_kpi_row(spec) for spec in expected]
+
         for kpi in normalized_kpis:
             db.session.add(KpiExtraction(
                 employee_id=emp.id,
@@ -792,31 +834,65 @@ def _run_reason_stage(run, employees):
         }
         emp_data[emp.id] = (extraction, updates)
 
-    # Parallelize GPT calls
-    with ThreadPoolExecutor(max_workers=5) as pool:
-        futures = {
-            pool.submit(_reason_accountability, emp, emp_data[emp.id][0], emp_data[emp.id][1]): emp
-            for emp in emps
-        }
-
     total_p, total_c = 0, 0
-    for future, emp in futures.items():
-        result = future.result()
-        total_p += result['prompt_tokens']
-        total_c += result['completion_tokens']
+    pool = ThreadPoolExecutor(max_workers=5)
+    futures = {
+        pool.submit(_reason_accountability, emp, emp_data[emp.id][0], emp_data[emp.id][1]): emp
+        for emp in emps
+    }
 
-        extraction = emp_data[emp.id][0]
-        data = result['data']
-        db.session.add(AnalysisResult(
-            employee_id=emp.id,
-            flag_type=data.get('flag_type', 'none'),
-            flag_label=data.get('flag_label', ''),
-            summary=data.get('summary', ''),
-            detail=data.get('detail', ''),
-            recommended_action=data.get('recommended_action', ''),
-            submission_rate=extraction.get('submission_rate', ''),
-            pipeline_run_id=run_id,
-        ))
+    try:
+        for future, emp in futures.items():
+            extraction = emp_data[emp.id][0]
+            try:
+                result = future.result(timeout=REASON_WORKER_TIMEOUT_SECONDS)
+                total_p += result['prompt_tokens']
+                total_c += result['completion_tokens']
+                data = result['data']
+            except FuturesTimeoutError:
+                log.error(
+                    "Stage 3 reasoning timed out for %s after %.1fs — inserting fallback result",
+                    emp.name,
+                    REASON_WORKER_TIMEOUT_SECONDS,
+                )
+                future.cancel()
+                data = {
+                    'flag_type': 'none',
+                    'flag_label': 'Timed Out',
+                    'summary': 'Reasoning stage timed out for this employee.',
+                    'detail': '',
+                    'recommended_action': '',
+                }
+            except Exception:
+                log.exception("Stage 3 reasoning failed for %s — inserting fallback result", emp.name)
+                data = {
+                    'flag_type': 'none',
+                    'flag_label': 'Error',
+                    'summary': 'Reasoning stage failed for this employee.',
+                    'detail': '',
+                    'recommended_action': '',
+                }
+
+            if not isinstance(data, dict):
+                data = {}
+            flag_type = _clean_str(data.get('flag_type', 'none')).lower() or 'none'
+            if flag_type not in {'none', 'no_progress', 'vanity_metrics', 'optimism_gap', 'submission_gap', 'other'}:
+                flag_type = 'none'
+
+            db.session.add(AnalysisResult(
+                employee_id=emp.id,
+                flag_type=flag_type,
+                flag_label=_coerce_text(data.get('flag_label', '')),
+                summary=_coerce_text(data.get('summary', '')),
+                detail=_coerce_text(data.get('detail', '')),
+                recommended_action=_coerce_text(data.get('recommended_action', '')),
+                submission_rate=extraction.get('submission_rate', ''),
+                pipeline_run_id=run_id,
+            ))
+    finally:
+        # Do not block forever on executor shutdown if a worker got stuck in an external call.
+        pool.shutdown(wait=False, cancel_futures=True)
+
     db.session.commit()
     return total_p, total_c
 
@@ -868,32 +944,15 @@ def _generate_updates(emp):
     days_list = ", ".join(day.title() for day in expected_days)
 
     system = (
-        "You are writing casual Slack messages for a fictional company's #daily-standup channel.\n\n"
-        "FORMATTING RULES (non-negotiable):\n"
-        "- Plain text ONLY. No markdown. No **bold**, no ## headers, no [links](url), no ```code```.\n"
-        "- Do NOT use emojis as section headers or bullet prefixes (no '✅ Topic:', no '🚧 Topic:').\n"
-        "- Emojis are fine sprinkled naturally mid-sentence, just not as structural formatting.\n"
-        "- No bullet points. No numbered lists. Write in flowing sentences/short paragraphs.\n"
-        "- 1-4 sentences per update for most people. Match the stated writing style for length/tone "
-        "but OVERRIDE any formatting instructions in the writing style — plain text always wins.\n\n"
-        "BRAND RULES (non-negotiable):\n"
-        "- The ONLY client brand names that exist in this fictional universe are: "
-        "Northwind Athletics, Petalcrest Beauty, Harborline Foods, Ridgeway Outdoors, Cinderhouse Coffee.\n"
-        "- Do NOT use any real-world company names. No Unilever, no Adidas, no Crocs, no Nike, "
-        "no L'Oréal, no Nestlé, no Social Native. These do not exist in this world.\n"
-        "- If the writing style or KPIs mention real brands, ignore those brand names and substitute "
-        "from the fictional list above.\n\n"
-        "SUBMISSION RULES:\n"
-        "- Default cadence is 5 updates: Monday through Friday.\n"
-        "- Only return fewer than 5 updates if hidden truth explicitly says they skip specific weekdays.\n"
-        "- Day values must be lowercase weekday strings: monday/tuesday/wednesday/thursday/friday.\n"
-        "- Return exactly one update per required day.\n\n"
-        "METRIC SEMANTICS (non-negotiable):\n"
-        "- For '/week' count KPIs, each daily update must report THAT DAY'S increment, not a running or weekly total.\n"
-        "- Do NOT repeat 'this week total' values across multiple days.\n"
-        "- Use consistent units for each KPI across all days (e.g., hours always in hours).\n"
-        "- Do not contradict prior day metrics.\n\n"
-        "Return valid JSON: {\"updates\": [{\"day\": \"monday\", \"content\": \"...\"}]}"
+        "You write casual Slack #daily-standup messages for a fictional company.\n\n"
+        "RULES:\n"
+        "- Plain text only. No markdown, no bold, no headers, no bullet points. Flowing sentences, 1-4 per update.\n"
+        "- Emojis OK mid-sentence, never as section headers/prefixes.\n"
+        "- Fictional brands ONLY: Northwind Athletics, Petalcrest Beauty, Harborline Foods, Ridgeway Outdoors, Cinderhouse Coffee. No real brands.\n"
+        "- Day values: lowercase weekday strings (monday/tuesday/wednesday/thursday/friday). One update per required day.\n"
+        "- For '/week' count KPIs: report THAT DAY'S increment, not running/weekly totals.\n"
+        "- Consistent units across days. No contradictions.\n\n"
+        "Return JSON: {\"updates\": [{\"day\": \"monday\", \"content\": \"...\"}]}"
     )
 
     base_user = (
@@ -917,7 +976,7 @@ def _generate_updates(emp):
     normalized_updates = []
     last_errors = []
 
-    for _ in range(3):
+    for _ in range(2):
         result = call_gpt(system, f"{base_user}{retry_feedback}")
         raw_updates = result["data"].get("updates", result["data"].get("days", []))
         normalized_updates = _normalize_generated_updates(raw_updates)
@@ -980,7 +1039,7 @@ def _extract_kpis(emp, updates):
         f"If a day is not listed, it is MISSING — the employee did not submit that day.\n\n"
         f"Return JSON:\n"
         f"{{\n"
-        f"  \"kpis\": [{{\"name\": \"short KPI name\", \"target\": \"single value\", \"actual\": \"single value\", \"delta\": \"+/- single value or —\", \"status\": \"on_track|at_risk|missing\"}}],\n"
+        f"  \"kpis\": [{{\"name\": \"short KPI name (use names closely matching the KPI targets above)\", \"target\": \"single value\", \"actual\": \"single value\", \"delta\": \"+/- single value or —\", \"status\": \"on_track|at_risk|missing\"}}],\n"
         f"  \"submission_rate\": \"X/5\",\n"
         f"  \"days_submitted\": [\"monday\", \"tuesday\", ...]\n"
         f"}}"
@@ -988,11 +1047,21 @@ def _extract_kpis(emp, updates):
     return call_gpt(system, user)
 
 
+def _condense_updates(updates):
+    """Trim each update to first 400 chars for Stage 3 — KPIs already extracted."""
+    lines = []
+    for u in updates:
+        day = u.get('day', 'unknown').title()
+        content = (u.get('content') or '')[:400]
+        if len(u.get('content', '')) > 400:
+            content += '...'
+        lines.append(f"{day}: {content}")
+    return "\n".join(lines)
+
+
 def _reason_accountability(emp, extraction, updates):
     """Stage 3: Reason over extracted data. Does NOT receive hidden_truth."""
-    updates_text = "\n\n".join(
-        f"{u.get('day', 'unknown').title()}: {u.get('content', '')}" for u in updates
-    )
+    updates_text = _condense_updates(updates)
     kpi_summary = json.dumps(extraction.get('kpis', []), indent=2)
     submission_rate = extraction.get('submission_rate', 'unknown')
 
@@ -1000,16 +1069,18 @@ def _reason_accountability(emp, extraction, updates):
         "You are an AI operations analyst advising a CEO. Your job is to classify "
         "exactly ONE accountability flag for this employee using the ordered rules below. "
         "Check each rule IN ORDER and assign the FIRST one that matches. Return valid JSON.\n\n"
+        "Focus your summary on METRIC PERFORMANCE: how far the employee is from their KPI targets "
+        "and trajectory. Submission cadence is secondary context.\n\n"
         "CLASSIFICATION RULES (check in this exact order):\n"
-        "1. submission_gap — The employee submitted fewer than 5/5 daily updates, OR there are "
-        "multi-day gaps in their submission cadence. CHECK THIS FIRST by looking at submission_rate.\n"
+        "1. no_progress — The same blocker, task, or issue is repeated across 3+ days with no "
+        "escalation, resolution, or meaningful forward movement. The employee is stuck.\n"
         "2. vanity_metrics — Activity/effort metrics (calls made, emails sent, tasks completed) "
         "look strong, BUT outcome metrics (revenue, meetings booked, deals closed) are declining "
         "or flat. The employee emphasizes activity to mask poor outcomes.\n"
-        "3. no_progress — The same blocker, task, or issue is repeated across 3+ days with no "
-        "escalation, resolution, or meaningful forward movement. The employee is stuck.\n"
-        "4. optimism_gap — The employee uses consistently positive/optimistic language ('feeling good,' "
+        "3. optimism_gap — The employee uses consistently positive/optimistic language ('feeling good,' "
         "'great call,' 'almost there') but the underlying metrics are declining, stalled, or absent.\n"
+        "4. submission_gap — The employee submitted fewer than 5/5 daily updates, OR there are "
+        "multi-day gaps in their submission cadence. This is a process issue, not a performance issue.\n"
         "5. none — The employee is genuinely on track. Metrics meet or exceed targets, submissions "
         "are consistent, and there are no red flags.\n\n"
         "You MUST pick exactly one. Do NOT default to optimism_gap — only use it if the other "
@@ -1021,20 +1092,20 @@ def _reason_accountability(emp, extraction, updates):
         f"Submission rate: {submission_rate}\n\n"
         f"Raw updates (for context):\n{updates_text}\n\n"
         f"ANALYSIS STEPS (you must do each one):\n"
-        f"Step 1: Check submission_rate. Is it less than 5/5? Are any weekdays missing? "
-        f"If yes → submission_gap.\n"
+        f"Step 1: Is the same blocker or task mentioned 3+ days without resolution or escalation? "
+        f"If yes → no_progress.\n"
         f"Step 2: Compare activity metrics vs outcome metrics. Are activity numbers strong but "
         f"outcomes declining day-over-day? If yes → vanity_metrics.\n"
-        f"Step 3: Is the same blocker or task mentioned 3+ days without resolution or escalation? "
-        f"If yes → no_progress.\n"
-        f"Step 4: Is the language positive but metrics declining/stalled/absent? If yes → optimism_gap.\n"
+        f"Step 3: Is the language positive but metrics declining/stalled/absent? If yes → optimism_gap.\n"
+        f"Step 4: Check submission_rate. Is it less than 5/5? Are any weekdays missing? "
+        f"If yes → submission_gap.\n"
         f"Step 5: If none of the above apply → none.\n\n"
         f"Return JSON:\n"
         f"{{\n"
-        f"  \"flag_type\": \"none|optimism_gap|submission_gap|vanity_metrics|no_progress\",\n"
+        f"  \"flag_type\": \"none|no_progress|vanity_metrics|optimism_gap|submission_gap\",\n"
         f"  \"flag_label\": \"Human-readable label\",\n"
-        f"  \"summary\": \"2-line summary for dashboard card\",\n"
-        f"  \"detail\": \"3-5 paragraph analysis with specific evidence from the data\",\n"
+        f"  \"summary\": \"2-line summary focused on metric performance and distance to targets. Lead with numbers.\",\n"
+        f"  \"detail\": \"Single string field. Include concise evidence points separated by newlines (can use • within the string).\",\n"
         f"  \"recommended_action\": \"One specific action the CEO should take THIS WEEK (e.g., 'Pull Sean into a 1:1 Monday to discuss daily submission commitment' — not vague advice)\"\n"
         f"}}"
     )

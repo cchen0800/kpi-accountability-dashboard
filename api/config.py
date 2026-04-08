@@ -21,11 +21,12 @@ if not SECRET_KEY:
         )
 
 # CORS
-CORS_ORIGIN = os.environ.get("CORS_ORIGIN", "http://localhost:3000")
+CORS_ORIGIN = os.environ.get("CORS_ORIGIN", "http://localhost:3100")
 
 # OpenAI
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o-mini")
+OPENAI_TIMEOUT_SECONDS = float(os.environ.get("OPENAI_TIMEOUT_SECONDS", "45"))
 
 # Database
 DB_DIR = os.environ.get("DB_DIR", os.path.join(os.path.dirname(__file__), '..', 'data'))

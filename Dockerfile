@@ -18,7 +18,7 @@ COPY api/ .
 COPY synthetic_data.json .
 COPY --from=frontend /app/dist/ dist/
 
-EXPOSE 5000
+EXPOSE 5100
 
 ENV PYTHONUNBUFFERED=1
 
@@ -27,4 +27,4 @@ RUN addgroup --system app && adduser --system --ingroup app app \
 
 USER app
 
-CMD ["sh", "-c", "gunicorn app:app --bind 0.0.0.0:5000 --workers ${WEB_CONCURRENCY:-2} --worker-class gthread --threads 4 --timeout 120 --graceful-timeout 30"]
+CMD ["sh", "-c", "gunicorn app:app --bind 0.0.0.0:5100 --workers ${WEB_CONCURRENCY:-2} --worker-class gthread --threads 4 --timeout 120 --graceful-timeout 30"]

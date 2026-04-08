@@ -109,6 +109,7 @@ export default function PipelineControl({ onComplete, onReset }) {
       await triggerStage(stageKey)
       const runningStatus = STAGES.find(s => s.key === stageKey).runningStatus
       setStatus({ status: runningStatus, stage: stageKey, error: null })
+      if (pollRef.current) clearInterval(pollRef.current)
       pollRef.current = setInterval(poll, 2000)
     } catch (e) {
       if (e.status === 409) {

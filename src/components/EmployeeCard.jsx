@@ -1,6 +1,97 @@
 import { useNavigate } from 'react-router-dom'
 import { FLAG_STYLES, DEPARTMENTS } from '../lib/flags'
 
+function parseKpiProgress(kpi) {
+  const target = kpi.target || ''
+  const actual = kpi.actual || ''
+
+  // Extract numeric values
+  const targetMatch = target.match(/(\d+(?:\.\d+)?)/)
+  const actualMatch = actual.match(/(\d+(?:\.\d+)?)/)
+  if (!targetMatch || !actualMatch) return null
+
+  const targetNum = parseFloat(targetMatch[1])
+  const actualNum = parseFloat(actualMatch[1])
+  if (isNaN(targetNum) || targetNum === 0 || isNaN(actualNum)) return null
+
+  // Detect inverted KPIs (lower is better): response time, duration thresholds
+  const isInverted = /(<|response time|hr\b|hour)/i.test(target)
+
+  let fillPct
+  if (isInverted) {
+    // For inverted: at target = 100%, above target = less fill
+    fillPct = targetNum > 0 ? Math.min((targetNum / actualNum) * 100, 100) : 0
+  } else {
+    fillPct = Math.min((actualNum / targetNum) * 100, 100)
+  }
+
+  return { targetNum, actualNum, fillPct: Math.max(0, fillPct), isInverted }
+}
+
+function KpiProgressBar({ kpi }) {
+  const isRisk = kpi.status === 'at_risk'
+  const isMissing = kpi.status === 'missing'
+  const isOnTrack = kpi.status === 'on_track'
+  const barColor = isOnTrack ? 'var(--success)' : isRisk ? 'var(--warning)' : 'var(--danger)'
+  const deltaColor = isOnTrack ? 'var(--success)' : isRisk ? 'var(--warning)' : 'var(--danger)'
+
+  const progress = parseKpiProgress(kpi)
+  const isQualitative = !progress && kpi.status !== 'missing'
+
+  return (
+    <div style={{ padding: '6px 0' }}>
+      {/* KPI name + delta */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {kpi.kpi_name}
+        </span>
+        {kpi.delta && kpi.delta !== '—' && (
+          <span className="mono" style={{ fontSize: 11, fontWeight: 700, color: deltaColor, marginLeft: 8, flexShrink: 0 }}>
+            {kpi.delta}
+          </span>
+        )}
+      </div>
+
+      {/* Progress bar or qualitative status */}
+      {progress ? (
+        <>
+          <div style={{
+            height: 6, borderRadius: 3,
+            background: 'var(--bg)', overflow: 'hidden',
+          }}>
+            <div style={{
+              height: '100%', borderRadius: 3,
+              width: `${progress.fillPct}%`,
+              background: barColor,
+              transition: 'width 0.6s ease',
+            }} />
+          </div>
+          <div className="mono" style={{ fontSize: 10, color: 'var(--text-ghost)', marginTop: 2 }}>
+            {kpi.actual} / {kpi.target}
+          </div>
+        </>
+      ) : isMissing ? (
+        <>
+          <div style={{
+            height: 6, borderRadius: 3,
+            background: 'var(--bg)',
+          }} />
+          <div className="mono" style={{ fontSize: 10, color: 'var(--text-ghost)', marginTop: 2 }}>
+            no data
+          </div>
+        </>
+      ) : isQualitative ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 1 }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: barColor }} />
+          <span className="mono" style={{ fontSize: 10, color: 'var(--text-ghost)' }}>
+            {kpi.actual || kpi.target}
+          </span>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 export default function EmployeeCard({ employee, index, priorityRank }) {
   const navigate = useNavigate()
   const analysis = employee.analysis
@@ -26,6 +117,7 @@ export default function EmployeeCard({ employee, index, priorityRank }) {
         background: flagStyle.color,
       }} />
 
+      {/* 1. Header — name, role, department, flag badge */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 4 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
           {priorityRank && (
@@ -61,70 +153,47 @@ export default function EmployeeCard({ employee, index, priorityRank }) {
 
       {analysis && (
         <>
-          {/* Submission rate */}
-          <div style={{
-            marginTop: 14, display: 'flex', alignItems: 'center', gap: 8,
-            padding: '6px 10px',
-            background: 'var(--bg-raised)',
-            borderRadius: 'var(--radius-sm)',
-            border: '1px solid var(--border-subtle)',
-          }}>
-            <span style={{
-              fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-              letterSpacing: '0.8px', color: 'var(--text-ghost)',
-            }}>
-              Submission
-            </span>
-            <span className="mono" style={{
-              fontSize: 13, fontWeight: 700, color: flagType === 'submission_gap' ? 'var(--danger)' : 'var(--text)',
-            }}>
-              {analysis.submission_rate} days
-            </span>
-          </div>
-
-          {/* KPIs */}
+          {/* 2. KPI Progress Bars (centerpiece) */}
           {kpis.length > 0 && (
-            <div style={{ marginTop: 10 }}>
-              {kpis.map((kpi, i) => {
-                const isRisk = kpi.status === 'at_risk'
-                const isMissing = kpi.status === 'missing'
-                const statusColor = isRisk ? 'var(--warning)' : isMissing ? 'var(--danger)' : 'var(--success)'
-                return (
-                  <div key={i} style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    padding: '4px 0',
-                    borderBottom: i < kpis.length - 1 ? '1px solid var(--border-subtle)' : 'none',
-                  }}>
-                    <span style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-secondary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {kpi.kpi_name}
-                    </span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, marginLeft: 8 }}>
-                      <span className="mono" style={{ fontSize: 11, color: 'var(--text-ghost)' }}>
-                        {kpi.actual || '—'}<span style={{ color: 'var(--text-ghost)', margin: '0 2px' }}>/</span>{kpi.target || '—'}
-                      </span>
-                      <div style={{
-                        width: 6, height: 6, borderRadius: '50%',
-                        background: statusColor,
-                      }} />
-                    </div>
-                  </div>
-                )
-              })}
+            <div style={{
+              marginTop: 14,
+              padding: '8px 10px',
+              background: 'var(--bg)',
+              borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border-subtle)',
+            }}>
+              {kpis.map((kpi, i) => (
+                <div key={i} style={{
+                  borderBottom: i < kpis.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+                }}>
+                  <KpiProgressBar kpi={kpi} />
+                </div>
+              ))}
             </div>
           )}
 
-          {/* Summary */}
+          {/* 3. Summary — AI analysis text */}
           <div style={{
-            marginTop: 10,
-            fontSize: 12.5,
-            color: 'var(--text-secondary)',
+            marginTop: 12,
+            fontSize: 13,
+            color: 'var(--text)',
             fontWeight: 500,
-            lineHeight: 1.5,
+            lineHeight: 1.55,
           }}>
             {analysis.summary}
           </div>
 
-          {/* Recommended action */}
+          {/* 4. Submission Rate (demoted — ghost text) */}
+          <div style={{
+            marginTop: 8,
+            fontSize: 11,
+            color: 'var(--text-ghost)',
+            fontWeight: 500,
+          }}>
+            Submissions: {analysis.submission_rate} days
+          </div>
+
+          {/* 5. Recommended action */}
           {analysis.recommended_action && (
             <div style={{
               marginTop: 12,

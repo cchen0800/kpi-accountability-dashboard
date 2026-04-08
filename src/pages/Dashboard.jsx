@@ -5,7 +5,7 @@ import { employeesAtom } from '../lib/store/employees'
 import { lastRunAtom } from '../lib/store/pipeline'
 import { fetchEmployees, fetchAllUpdates } from '../lib/api/employees'
 import { fetchLastRun } from '../lib/api/pipeline'
-import { sortBySeverity, FLAG_STYLES } from '../lib/flags'
+import { sortBySeverity, FLAG_STYLES, worstDelta } from '../lib/flags'
 import EmployeeCard from '../components/EmployeeCard'
 import SlackFeed from '../components/SlackFeed'
 import TeamRollup from '../components/TeamRollup'
@@ -39,16 +39,29 @@ export default function Dashboard() {
     const hasAnalysis = employees.some(e => e.analysis)
     if (!hasAnalysis || employees.length === 0) return null
 
-    const flagged = sorted.filter(e => e.analysis?.flag_type && e.analysis.flag_type !== 'none')
-    if (flagged.length === 0) return 'All team members are on track this week.'
+    // Count KPIs at risk + missing across all employees
+    let atRisk = 0, missing = 0, totalKpis = 0
+    for (const emp of employees) {
+      for (const kpi of (emp.kpi_extractions || [])) {
+        totalKpis++
+        if (kpi.status === 'at_risk') atRisk++
+        else if (kpi.status === 'missing') missing++
+      }
+    }
 
-    const topNames = flagged.slice(0, 2).map(e => {
-      const style = FLAG_STYLES[e.analysis.flag_type] || {}
-      return `${e.name} (${(style.label || e.analysis.flag_type).toLowerCase()})`
-    })
-    const rest = flagged.length > 2 ? ` and ${flagged.length - 2} more` : ''
-    return `${flagged.length} of ${employees.length} team members need attention this week. Highest priority: ${topNames.join(' and ')}${rest}.`
-  }, [employees, sorted])
+    const troubled = atRisk + missing
+    if (troubled === 0) return 'All KPIs are on track this week.'
+
+    // Find employees furthest from targets (worst deltas)
+    const withDeltas = employees
+      .filter(e => (e.kpi_extractions || []).some(k => k.delta && k.delta !== '—' && parseFloat(k.delta) < 0))
+      .sort((a, b) => worstDelta(a) - worstDelta(b))
+      .slice(0, 2)
+      .map(e => e.name)
+
+    const namesStr = withDeltas.length > 0 ? ` ${withDeltas.join(' and ')} ${withDeltas.length === 1 ? 'is' : 'are'} furthest from targets.` : ''
+    return `${troubled} of ${totalKpis} KPIs are at risk or missing data this week.${namesStr}`
+  }, [employees])
 
   return (
     <>

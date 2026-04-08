@@ -5,7 +5,7 @@ Thin wrapper around OpenAI API with token counting and cost estimation.
 import json
 import logging
 from openai import OpenAI
-from config import OPENAI_API_KEY, OPENAI_MODEL
+from config import OPENAI_API_KEY, OPENAI_MODEL, OPENAI_TIMEOUT_SECONDS
 
 log = logging.getLogger(__name__)
 
@@ -30,6 +30,7 @@ def call_gpt(system_prompt, user_prompt, temperature=0.7):
         ],
         response_format={"type": "json_object"},
         temperature=temperature,
+        timeout=OPENAI_TIMEOUT_SECONDS,
     )
 
     message = response.choices[0].message.content

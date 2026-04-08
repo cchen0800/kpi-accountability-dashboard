@@ -5,16 +5,25 @@ export default function AnalysisDetail({ analysis }) {
     <div className="card-elevated animate-in" style={{ animationDelay: '0.25s' }}>
       <div className="section-header">AI Analysis</div>
 
-      {/* Detail narrative */}
-      <div style={{
+      {/* Detail bullets */}
+      <ul style={{
         fontSize: 13,
         color: 'var(--text-secondary)',
         fontWeight: 500,
         lineHeight: 1.7,
-        whiteSpace: 'pre-wrap',
+        margin: 0,
+        paddingLeft: 18,
+        listStyle: 'disc',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 6,
       }}>
-        {analysis.detail}
-      </div>
+        {(analysis.detail || '').split(/\n|(?:^|\n)•/).filter(line => line.trim()).map((line, i) => (
+          <li key={i} style={{ paddingLeft: 2 }}>
+            {line.replace(/^[•\-]\s*/, '').trim()}
+          </li>
+        ))}
+      </ul>
 
       {/* Recommended action */}
       {analysis.recommended_action && (
