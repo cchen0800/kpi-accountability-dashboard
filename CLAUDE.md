@@ -5,13 +5,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Build & Run Commands
 
 ```bash
-# Frontend dev server (port 5173, proxies /api to localhost:5000)
+# Frontend dev server (port 3100, proxies /api to localhost:5100)
 npm install
 npm run dev
 
 # Backend (requires OPENAI_API_KEY in environment)
 pip install -r requirements.txt
-FLASK_DEBUG=1 python api/app.py   # runs on port 5000
+FLASK_DEBUG=1 python api/app.py   # runs on port 5100
 
 # Production build
 npm run build          # outputs to dist/
@@ -21,7 +21,7 @@ vite preview           # preview production build
 docker-compose up --build
 ```
 
-No test suite exists in this project.
+Tests: `.venv/bin/python -m pytest tests/ -v` (live GPT tests require `OPENAI_API_KEY`).
 
 ## Architecture
 
@@ -45,7 +45,7 @@ Stages run sequentially; within each stage, employees are processed in parallel 
 - `OPENAI_API_KEY` — required for pipeline
 - `OPENAI_MODEL` — defaults to `gpt-4o-mini`
 - `FLASK_DEBUG` — set to `1` for dev mode
-- `CORS_ORIGIN` — defaults to `http://localhost:5173`
+- `CORS_ORIGIN` — defaults to `http://localhost:3100`
 - `DB_DIR` — SQLite location, defaults to `./data`
 
 ## Git Configuration

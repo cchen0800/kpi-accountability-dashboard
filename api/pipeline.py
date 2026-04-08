@@ -488,6 +488,43 @@ def _normalize_model_row(spec, row, updates):
     }
 
 
+def _extract_quarter_progress(spec, updates):
+    """Scan updates for qualitative progress signals for quarter_outcome KPIs.
+    Returns a normalized row dict or None if no signals found."""
+    kpi_tokens = _tokenize(spec["source"])
+    status_re = re.compile(
+        r"\b(renewed?|stalled|blocked|shipped|delayed|signed|slipping|on track|behind|paused|pending|no progress)\b",
+        re.IGNORECASE,
+    )
+    statuses_found = []
+    for update in updates:
+        content = (update.get("content") or "").lower()
+        if not any(tok in content for tok in kpi_tokens):
+            continue
+        matches = status_re.findall(content)
+        statuses_found.extend(matches)
+
+    if not statuses_found:
+        return None
+
+    negative = {"stalled", "blocked", "delayed", "slipping", "behind", "paused", "no progress"}
+    has_negative = any(s.lower() in negative for s in statuses_found)
+    status = "at_risk" if has_negative else "on_track"
+
+    target_num = _target_number(spec["target"])
+    status_summary = ", ".join(dict.fromkeys(s.lower() for s in statuses_found))
+    actual = status_summary if not target_num else f"0/{int(target_num)} — {status_summary}"
+    delta = "behind schedule" if has_negative else "progressing"
+
+    return {
+        "name": spec["name"],
+        "target": spec["target"],
+        "actual": actual,
+        "delta": delta,
+        "status": status,
+    }
+
+
 def _normalize_extracted_kpis(emp, raw_data, updates):
     expected = _build_expected_kpis(emp.kpis)
     extracted_rows = (raw_data or {}).get("kpis", [])
@@ -537,6 +574,18 @@ def _normalize_extracted_kpis(emp, raw_data, updates):
             })
             continue
 
+        if spec["kind"] == "quarter_outcome":
+            # Prefer GPT-extracted values; fall back to qualitative scan
+            if row and not _is_missing_value(_clean_str(row.get("actual"))):
+                normalized.append(_normalize_model_row(spec, row, updates))
+                continue
+            fallback = _extract_quarter_progress(spec, updates)
+            if fallback:
+                normalized.append(fallback)
+                continue
+            normalized.append(_missing_kpi_row(spec))
+            continue
+
         normalized.append(_normalize_model_row(spec, row, updates))
 
     return normalized
@@ -580,6 +629,28 @@ def _validate_generated_updates(emp, updates, expected_days):
             target = _target_number(spec["target"])
             if total is not None and target and total > target * 2.5:
                 errors.append(f"Count KPI '{spec['name']}' appears to use weekly totals repeatedly")
+
+    has_quarter_outcome = any(spec["kind"] == "quarter_outcome" for spec in expected_kpis)
+    if has_quarter_outcome:
+        status_keywords = re.compile(
+            r"\b(renewed?|stalled|blocked|shipped|delayed|signed|slipping|on track|behind|paused|pending)\b",
+            re.IGNORECASE,
+        )
+        for spec in expected_kpis:
+            if spec["kind"] != "quarter_outcome":
+                continue
+            kpi_tokens = _tokenize(spec["source"])
+            found_signal = False
+            for update in updates:
+                content = (update.get("content") or "").lower()
+                if any(tok in content for tok in kpi_tokens) and status_keywords.search(content):
+                    found_signal = True
+                    break
+            if not found_signal:
+                errors.append(
+                    f"Quarter KPI '{spec['name']}' must include at least one status signal "
+                    f"(e.g., stalled/renewed/blocked/shipped) near KPI-related terms"
+                )
 
     return errors
 
@@ -951,7 +1022,8 @@ def _generate_updates(emp):
         "- Fictional brands ONLY: Northwind Athletics, Petalcrest Beauty, Harborline Foods, Ridgeway Outdoors, Cinderhouse Coffee. No real brands.\n"
         "- Day values: lowercase weekday strings (monday/tuesday/wednesday/thursday/friday). One update per required day.\n"
         "- For '/week' count KPIs: report THAT DAY'S increment, not running/weekly totals.\n"
-        "- Consistent units across days. No contradictions.\n\n"
+        "- Consistent units across days. No contradictions.\n"
+        "- For quarterly/outcome KPIs (renewals, shipping features, revenue targets): each update MUST mention the current state of at least one tracked item using status words like signed, renewed, stalled, blocked, shipped, delayed, on track, slipping.\n\n"
         "Return JSON: {\"updates\": [{\"day\": \"monday\", \"content\": \"...\"}]}"
     )
 
@@ -964,10 +1036,10 @@ def _generate_updates(emp):
         f"Hidden truth to embed subtly: {emp.hidden_truth}\n\n"
         f"Each update should:\n"
         f"- Sound like a real Slack message, not a report\n"
-        f"- Match the writing style exactly\n"
+        f"- Match the writing style in tone, structure, and vocabulary\n"
         f"- Reference fictional brand clients naturally (listed in system prompt)\n"
         f"- Embed the hidden truth subtly — don't make it obvious\n"
-        f"- Include realistic daily metrics that trend according to the hidden truth\n\n"
+        f"- Include at least one extractable progress indicator per KPI per update — a count, a status word (signed/stalled/blocked/shipped), a milestone, or a percentage. The writing style controls HOW things are said, not WHETHER progress evidence appears.\n\n"
         f"Return JSON: {{\"updates\": [{{\"day\": \"monday\", \"content\": \"...\"}}]}}"
     )
 
@@ -1022,7 +1094,12 @@ def _extract_kpis(emp, updates):
         "- Do not output per-day breakdowns in KPI rows.\n"
         "- For '/week' COUNT KPIs: infer daily increments and return WEEKLY SUM as actual.\n"
         "- For duration KPIs (like response time): return the WEEKLY AVERAGE as actual.\n"
-        "- For quarterly or outcome KPIs with no explicit numeric evidence in updates: status='missing', actual='—', delta='—'.\n"
+        "- For quarterly or outcome KPIs (e.g., 'renew N accounts', 'ship feature by date'):\n"
+        "  * Extract progress from qualitative signals: count items by status (e.g., '0 renewed, 1 stalled').\n"
+        "  * actual = current state summary (e.g., '0/4 renewed', 'blocked - no progress').\n"
+        "  * delta = distance to target (e.g., '-4 renewals', 'behind schedule').\n"
+        "  * status = 'at_risk' if behind/stalled/blocked, 'on_track' if progressing on schedule.\n"
+        "  * Only use status='missing' if updates contain ZERO mention of the KPI topic.\n"
         "- Missing means insufficient evidence, not zero performance.\n\n"
         "SUBMISSION COUNTING:\n"
         "- Count exactly which days (Monday through Friday) have an update present.\n"
