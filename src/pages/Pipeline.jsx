@@ -42,7 +42,7 @@ export default function Pipeline() {
   const [reasonOutput, setReasonOutput] = useState(null)
   const [activeTab, setActiveTab] = useState(null)
   const [direction, setDirection] = useState(0)
-  const [introExpanded, setIntroExpanded] = useState(true)
+  const [introExpanded, setIntroExpanded] = useState(false)
 
   const TAB_INDEX = { generate: 0, extract: 1, reason: 2 }
 
@@ -111,70 +111,124 @@ export default function Pipeline() {
       minHeight: 0,
       minHeight: 'calc(100vh - 48px - var(--viewport-footer-gap))',
     }}>
-      {/* Context intro */}
-      <div className="card animate-in" style={{
-        borderLeft: '3px solid var(--accent)',
-        padding: 0,
-        marginBottom: 20,
-        overflow: 'hidden',
-      }}>
-        <button
-          onClick={() => setIntroExpanded(prev => !prev)}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 16px',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            fontFamily: 'var(--font)',
-          }}
-        >
-          <span style={{
-            fontSize: 13,
-            fontWeight: 700,
-            color: 'var(--text)',
-            letterSpacing: '-0.01em',
-          }}>
-            Can AI catch what a CEO would miss?
-          </span>
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="var(--text-ghost)"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+      {/* Hero section */}
+      <div className="animate-in" style={{ marginBottom: 20 }}>
+        {/* Tagline */}
+        <h1 style={{
+          fontSize: 22,
+          fontWeight: 800,
+          color: 'var(--text)',
+          letterSpacing: '-0.5px',
+          margin: '0 0 6px',
+        }}>
+          Can AI catch what a CEO would miss?
+        </h1>
+        <p style={{
+          fontSize: 13,
+          color: 'var(--text-tertiary)',
+          fontWeight: 500,
+          lineHeight: 1.5,
+          margin: '0 0 14px',
+        }}>
+          Watch three AI agents analyze a week of employee standups — blind to the truth hidden in each profile.
+        </p>
+
+        {/* Collapsible explainer */}
+        <div className="card" style={{
+          borderLeft: '3px solid var(--accent)',
+          padding: 0,
+          overflow: 'hidden',
+          marginBottom: 14,
+        }}>
+          <button
+            onClick={() => setIntroExpanded(prev => !prev)}
             style={{
-              transition: 'transform 0.2s ease',
-              transform: introExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
-              flexShrink: 0,
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '10px 16px',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontFamily: 'var(--font)',
             }}
           >
-            <polyline points="6 9 12 15 18 9" />
-          </svg>
-        </button>
-        <div style={{
-          maxHeight: introExpanded ? 200 : 0,
-          opacity: introExpanded ? 1 : 0,
-          transition: 'max-height 0.25s ease, opacity 0.2s ease',
-          overflow: 'hidden',
-        }}>
+            <span style={{
+              fontSize: 12,
+              fontWeight: 700,
+              color: 'var(--text-secondary)',
+              letterSpacing: '-0.01em',
+            }}>
+              How the experiment works
+            </span>
+            <svg
+              width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke="var(--text-ghost)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+              style={{
+                transition: 'transform 0.2s ease',
+                transform: introExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                flexShrink: 0,
+              }}
+            >
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </button>
           <div style={{
-            padding: '0 16px 12px',
-            fontSize: 12.5,
-            lineHeight: 1.6,
-            color: 'var(--text-secondary)',
+            maxHeight: introExpanded ? 600 : 0,
+            opacity: introExpanded ? 1 : 0,
+            transition: 'max-height 0.3s ease, opacity 0.2s ease',
+            overflow: 'hidden',
           }}>
-            Lumen Collective (Series C, 180 employees) mandated daily Slack standups.
-            This pipeline runs 3 independent AI agents sequentially - one generates
-            realistic updates, one extracts KPIs blind, one reasons over the data to
-            flag accountability gaps. No agent sees the full picture. Can they still
-            surface the blind spots?
+            <div style={{
+              padding: '0 16px 16px',
+              fontSize: 12.5,
+              lineHeight: 1.7,
+              color: 'var(--text-secondary)',
+            }}>
+              <p style={{ margin: '0 0 10px' }}>
+                <strong style={{ color: 'var(--text)' }}>The scenario:</strong> Lumen Collective is a Series C UGC marketplace (180 employees, Austin TX)
+                where the CEO mandated daily Slack standups to drive execution velocity. Five employees across
+                Creator Ops, Client Success, Marketing, Sales, and Product report daily — each with their own
+                writing style, KPI targets, and hidden performance patterns.
+              </p>
+              <p style={{ margin: '0 0 10px' }}>
+                <strong style={{ color: 'var(--text)' }}>The problem:</strong> Nobody reads 25+ updates a day.
+                But nobody reads 25+ updates a day. People learn to write updates that <em>sound</em> productive
+                without <em>being</em> productive — and the real issues hide in plain sight.
+              </p>
+              <p style={{ margin: '0 0 10px' }}>
+                <strong style={{ color: 'var(--text)' }}>The experiment:</strong> Each of the 5 employees below has a hidden performance truth baked into
+                their profile — an optimism gap, vanity metrics, missing submissions, or stalled progress. Three independent
+                AI agents process their standups sequentially: one loads the updates, one extracts KPIs blind, and one reasons
+                over the data to flag accountability gaps. No agent sees the full picture. Can the system still surface
+                what a busy CEO would miss?
+              </p>
+              <p style={{ margin: 0 }}>
+                <strong style={{ color: 'var(--text)' }}>Why this matters:</strong> This is what AI-first operations looks like — automation over headcount,
+                real-time visibility into team performance, and surfacing insights that would otherwise require hours
+                of manual review. The kind of operational backbone that scales.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Stats strip */}
+        <div className="stats-strip">
+          <div className="stat-item">
+            <span className="stat-number">5</span> Employees
+          </div>
+          <span className="stat-dot">·</span>
+          <div className="stat-item">
+            <span className="stat-number">25</span> Standups
+          </div>
+          <span className="stat-dot">·</span>
+          <div className="stat-item">
+            <span className="stat-number">15</span> KPIs
+          </div>
+          <span className="stat-dot">·</span>
+          <div className="stat-item">
+            <span className="stat-number">3</span> AI Agents
           </div>
         </div>
       </div>
