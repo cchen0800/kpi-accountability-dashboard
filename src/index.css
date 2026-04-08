@@ -212,13 +212,17 @@ body {
 /* Selection */
 ::selection { background: rgba(37, 80, 232, 0.15); }
 
-/* Mobile */
-@media (max-width: 768px) {
-  .card { padding: 14px; }
-  .card-elevated { padding: 14px; border-radius: var(--radius-md); }
-  .section-header { font-size: 10.5px; margin-bottom: 12px; }
-  .badge { font-size: 10.5px; padding: 2px 8px; }
-  .nav-title { display: none; }
+/* Tablet */
+@media (max-width: 900px) {
   .mobile-stack { grid-template-columns: 1fr !important; }
   .mobile-hide { display: none !important; }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .card { padding: 12px; }
+  .card-elevated { padding: 12px; border-radius: var(--radius-sm); }
+  .section-header { font-size: 10px; margin-bottom: 10px; }
+  .badge { font-size: 10px; padding: 2px 7px; }
+  .nav-title { display: none !important; }
 }

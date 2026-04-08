@@ -154,7 +154,8 @@ export default function Dashboard() {
         {/* Header */}
         <div className="animate-in" style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-          marginBottom: 24, paddingBottom: 18, borderBottom: '1px solid var(--border)',
+          marginBottom: 20, paddingBottom: 14, borderBottom: '1px solid var(--border)',
+          flexWrap: 'wrap', gap: 8,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {/* Slack drawer toggle */}
@@ -204,7 +205,7 @@ export default function Dashboard() {
         {/* Executive headline */}
         {!loading && headline && (
           <div className="animate-in" style={{
-            padding: '14px 18px',
+            padding: '12px 14px',
             background: 'var(--bg-raised)',
             border: '1px solid var(--border)',
             borderRadius: 'var(--radius-sm)',

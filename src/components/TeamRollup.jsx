@@ -272,13 +272,15 @@ export default function TeamRollup({ employees }) {
       {/* Compact flag legend row */}
       <div style={{
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'space-between',
         marginTop: 16,
         paddingTop: 12,
         borderTop: '1px solid var(--border-subtle)',
+        flexWrap: 'wrap',
+        gap: 8,
       }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 12px' }}>
           {flagSegments.map(seg => {
             const config = FLAG_CONFIG[seg.type] || FLAG_CONFIG.other
             return (
