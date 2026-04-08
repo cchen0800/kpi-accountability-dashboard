@@ -2,7 +2,7 @@ import hashlib
 import hmac
 import logging
 import time
-import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 import requests as http_requests
@@ -16,9 +16,12 @@ log = logging.getLogger(__name__)
 TELEGRAM_BOT_TOKEN = "8768789762:AAF7WmVWD0eoSt1g3qfHA_CJprCcpRNcCOU"
 TELEGRAM_CHAT_ID = "7477285272"
 
+# Shared 2-thread pool for Telegram sends — avoids spawning a new thread per page view
+_telegram_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="telegram")
+
 
 def _send_telegram(message):
-    """Send a Telegram message in a background thread so it doesn't block the request."""
+    """Send a Telegram message via shared pool so it doesn't block the request."""
     def _do():
         try:
             http_requests.post(
@@ -28,7 +31,7 @@ def _send_telegram(message):
             )
         except Exception as e:
             log.warning(f"Telegram send failed: {e}")
-    threading.Thread(target=_do, daemon=True).start()
+    _telegram_pool.submit(_do)
 
 auth_bp = Blueprint("auth", __name__)
 

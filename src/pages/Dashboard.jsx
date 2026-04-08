@@ -4,7 +4,7 @@ import { useAtom } from 'jotai'
 import { employeesAtom } from '../lib/store/employees'
 import { lastRunAtom } from '../lib/store/pipeline'
 import { fetchEmployees, fetchAllUpdates } from '../lib/api/employees'
-import { fetchLastRun, resetPipeline } from '../lib/api/pipeline'
+import { fetchLastRun, fetchPipelineStatus, resetPipeline } from '../lib/api/pipeline'
 import { pipelineStatusAtom } from '../lib/store/pipeline'
 import { sortBySeverity, FLAG_STYLES, worstDelta } from '../lib/flags'
 import EmployeeCard from '../components/EmployeeCard'
@@ -23,7 +23,14 @@ export default function Dashboard() {
 
   const loadData = useCallback(async () => {
     try {
-      const [emps, run, updates] = await Promise.all([fetchEmployees(), fetchLastRun(), fetchAllUpdates()])
+      const [emps, run, updates, status] = await Promise.all([
+        fetchEmployees(), fetchLastRun(), fetchAllUpdates(), fetchPipelineStatus(),
+      ])
+      // Fresh session — no pipeline run yet, send to pipeline page
+      if (!status || status.status === 'idle') {
+        navigate('/', { replace: true })
+        return
+      }
       setEmployees(emps)
       setLastRun(run)
       setAllUpdates(updates)
@@ -32,7 +39,7 @@ export default function Dashboard() {
     } finally {
       setLoading(false)
     }
-  }, [setEmployees, setLastRun])
+  }, [setEmployees, setLastRun, navigate])
 
   useEffect(() => { loadData() }, [loadData])
 

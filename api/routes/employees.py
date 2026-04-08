@@ -9,29 +9,33 @@ employees_bp = Blueprint('employees', __name__)
 
 @employees_bp.route('/api/employees')
 def list_employees():
-    # Find the latest completed pipeline run
     latest_run = PipelineRun.query.filter_by(status='complete').order_by(PipelineRun.id.desc()).first()
 
     employees = Employee.query.all()
-    result = []
 
+    if latest_run:
+        # Bulk fetch — 2 queries instead of 2*N
+        analyses = {
+            a.employee_id: a
+            for a in AnalysisResult.query.filter_by(pipeline_run_id=latest_run.id).all()
+        }
+        kpis_by_emp = {}
+        for k in KpiExtraction.query.filter_by(pipeline_run_id=latest_run.id).all():
+            kpis_by_emp.setdefault(k.employee_id, []).append(k)
+    else:
+        analyses = {}
+        kpis_by_emp = {}
+
+    result = []
     for emp in employees:
         data = emp.to_dict()
-
         if latest_run:
-            analysis = AnalysisResult.query.filter_by(
-                employee_id=emp.id, pipeline_run_id=latest_run.id
-            ).first()
+            analysis = analyses.get(emp.id)
             data['analysis'] = analysis.to_dict() if analysis else None
-
-            kpis = KpiExtraction.query.filter_by(
-                employee_id=emp.id, pipeline_run_id=latest_run.id
-            ).all()
-            data['kpi_extractions'] = [k.to_dict() for k in kpis]
+            data['kpi_extractions'] = [k.to_dict() for k in kpis_by_emp.get(emp.id, [])]
         else:
             data['analysis'] = None
             data['kpi_extractions'] = []
-
         result.append(data)
 
     return jsonify(result)
@@ -44,12 +48,15 @@ def all_updates():
     if not latest_run:
         return jsonify([])
 
+    # Bulk fetch all updates in one query
+    updates_by_emp = {}
+    for u in GeneratedUpdate.query.filter_by(pipeline_run_id=latest_run.id).all():
+        updates_by_emp.setdefault(u.employee_id, []).append(u)
+
     employees = Employee.query.all()
     result = []
     for emp in employees:
-        updates = GeneratedUpdate.query.filter_by(
-            employee_id=emp.id, pipeline_run_id=latest_run.id
-        ).all()
+        updates = updates_by_emp.get(emp.id, [])
         if updates:
             result.append({
                 'id': emp.id,
@@ -71,19 +78,16 @@ def get_employee(employee_id):
     latest_run = PipelineRun.query.filter_by(status='complete').order_by(PipelineRun.id.desc()).first()
 
     if latest_run:
-        # Generated updates
         updates = GeneratedUpdate.query.filter_by(
             employee_id=emp.id, pipeline_run_id=latest_run.id
         ).all()
         data['updates'] = [u.to_dict() for u in updates]
 
-        # KPI extractions
         kpis = KpiExtraction.query.filter_by(
             employee_id=emp.id, pipeline_run_id=latest_run.id
         ).all()
         data['kpi_extractions'] = [k.to_dict() for k in kpis]
 
-        # Analysis result
         analysis = AnalysisResult.query.filter_by(
             employee_id=emp.id, pipeline_run_id=latest_run.id
         ).first()

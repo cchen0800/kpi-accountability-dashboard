@@ -11,6 +11,7 @@ import logging
 import os
 import random
 import re
+import threading
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from datetime import datetime, timezone
 
@@ -19,6 +20,10 @@ from openai_client import call_gpt, estimate_cost_cents
 from config import OPENAI_MODEL, OPENAI_TIMEOUT_SECONDS, SYNTHETIC_DATA_PATH
 
 log = logging.getLogger(__name__)
+
+# Global cap on concurrent outbound OpenAI calls across all users/sessions.
+# Prevents 10 concurrent users from fan-out to 50+ simultaneous API calls.
+_OPENAI_SEMAPHORE = threading.Semaphore(20)
 
 WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday"]
 MISSING_TOKENS = {"", "-", "-", "n/a", "na", "unknown", "none", "not provided"}
@@ -925,7 +930,8 @@ def _extract_kpis(emp, updates):
         f"  \"days_submitted\": [\"monday\", \"tuesday\", ...]\n"
         f"}}"
     )
-    return call_gpt(system, user)
+    with _OPENAI_SEMAPHORE:
+        return call_gpt(system, user)
 
 
 def _condense_updates(updates):
@@ -990,4 +996,5 @@ def _reason_accountability(emp, extraction, updates):
         f"  \"recommended_action\": \"One specific action the CEO should take THIS WEEK (e.g., 'Pull Sean into a 1:1 Monday to discuss daily submission commitment' - not vague advice)\"\n"
         f"}}"
     )
-    return call_gpt(system, user, temperature=0.3)
+    with _OPENAI_SEMAPHORE:
+        return call_gpt(system, user, temperature=0.3)

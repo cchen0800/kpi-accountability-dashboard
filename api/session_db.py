@@ -25,6 +25,9 @@ SESSION_MAX_AGE = 86400  # 24 hours
 # Cache of session_id -> SQLAlchemy engine
 _engines = {}
 
+# Set of session IDs that have already been initialized (tables created + seeded)
+_initialized_sessions = set()
+
 
 def get_engine(session_id):
     """Get or create a SQLAlchemy engine for the given session."""
@@ -117,9 +120,11 @@ def before_request_handler(db):
 
     engine = get_engine(session_id)
 
-    # Ensure tables exist and employees are seeded (idempotent)
-    db.metadata.create_all(engine)
-    _seed_employees(session_id, engine)
+    # Only run create_all + seed once per session per process lifetime
+    if session_id not in _initialized_sessions:
+        db.metadata.create_all(engine)
+        _seed_employees(session_id, engine)
+        _initialized_sessions.add(session_id)
 
     db.session.remove()
 
@@ -130,7 +135,7 @@ def after_request_handler(response):
         response.set_cookie(
             SESSION_COOKIE,
             g.session_id,
-            max_age=SESSION_MAX_AGE,
+            max_age=None,  # session cookie — expires when browser closes
             httponly=True,
             samesite='Lax',
         )
