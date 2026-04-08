@@ -194,7 +194,7 @@ export default function Pipeline() {
               </p>
               <p style={{ margin: '0 0 10px' }}>
                 <strong style={{ color: 'var(--text)' }}>The problem:</strong> Nobody reads 25+ updates a day.
-                But nobody reads 25+ updates a day. People learn to write updates that <em>sound</em> productive
+                But everyone writes them. People learn to write updates that <em>sound</em> productive
                 without <em>being</em> productive. The real issues hide in plain sight.
               </p>
               <p style={{ margin: '0 0 10px' }}>

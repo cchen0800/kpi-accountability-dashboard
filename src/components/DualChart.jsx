@@ -33,14 +33,12 @@ function extractDailyMetrics(updates, kpis) {
   if (viable.length < 2) return null
 
   // Cross-check against structured KPI data to reject nonsensical regex extractions.
-  // The regex grabs numbers from free-text GPT output which is inherently unreliable.
   if (kpis && kpis.length > 0) {
     for (const [label, vals] of viable) {
       const nums = vals.filter(v => v !== null)
       const sum = nums.reduce((a, b) => a + b, 0)
       const max = Math.max(...nums)
 
-      // Find matching KPI from extraction stage
       const matchingKpi = kpis.find(k => {
         const name = (k.kpi_name || '').toLowerCase()
         return (label === 'Dials' && name.includes('dial')) ||
@@ -51,12 +49,10 @@ function extractDailyMetrics(updates, kpis) {
       if (matchingKpi) {
         const actualNum = parseFloat((matchingKpi.actual || '').match(/(\d+(?:\.\d+)?)/)?.[1])
         const targetNum = parseFloat((matchingKpi.target || '').match(/(\d+(?:\.\d+)?)/)?.[1])
-        // If the daily sum is wildly off from the extracted weekly actual, bail
         if (!isNaN(actualNum) && actualNum > 0) {
           const ratio = sum / actualNum
           if (ratio < 0.3 || ratio > 3) return null
         }
-        // If max daily value exceeds the weekly target, the regex grabbed wrong numbers
         if (!isNaN(targetNum) && targetNum > 0 && max > targetNum * 1.5) return null
       }
     }
@@ -73,13 +69,18 @@ function extractDailyMetrics(updates, kpis) {
   return { activity: { label: viable[0][0], values: viable[0][1] }, outcome: { label: viable[1][0], values: viable[1][1] } }
 }
 
-function normalize(values, height) {
+// Normalize each series independently to fill the chart height.
+// Uses a % change from baseline approach so trend direction is preserved.
+function normalizeToHeight(values, height) {
   const nums = values.filter(v => v !== null)
   if (nums.length === 0) return values.map(() => height / 2)
-  const min = Math.min(...nums) * 0.85
-  const max = Math.max(...nums) * 1.05
+  const min = Math.min(...nums)
+  const max = Math.max(...nums)
   const range = max - min || 1
-  return values.map(v => v !== null ? height - ((v - min) / range) * height : null)
+  // Add 15% padding top and bottom so points don't hit the edges
+  return values.map(v =>
+    v !== null ? height * 0.1 + ((max - v) / range) * height * 0.8 : null
+  )
 }
 
 export default function DualChart({ updates, kpis }) {
@@ -88,12 +89,12 @@ export default function DualChart({ updates, kpis }) {
 
   const W = 360
   const H = 140
-  const PAD_L = 0
-  const PAD_R = 0
+  const PAD_L = 28   // room for leftmost labels
+  const PAD_R = 28   // room for rightmost labels
   const xStep = (W - PAD_L - PAD_R) / 4
 
-  const actNorm = normalize(metrics.activity.values, H)
-  const outNorm = normalize(metrics.outcome.values, H)
+  const actNorm = normalizeToHeight(metrics.activity.values, H)
+  const outNorm = normalizeToHeight(metrics.outcome.values, H)
 
   function buildPath(normalized) {
     const points = normalized
@@ -112,7 +113,7 @@ export default function DualChart({ updates, kpis }) {
         Activity vs Outcome Trend
       </div>
 
-      <svg viewBox={`0 0 ${W} ${H + 20}`} style={{ width: '100%', height: 'auto' }}>
+      <svg viewBox={`0 0 ${W} ${H + 20}`} style={{ width: '100%', height: 'auto', overflow: 'visible' }}>
         {/* Grid lines */}
         {[0, 0.25, 0.5, 0.75, 1].map(pct => (
           <line
@@ -133,7 +134,7 @@ export default function DualChart({ updates, kpis }) {
           <path d={outPath} fill="none" stroke="var(--danger)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         )}
 
-        {/* Data points */}
+        {/* Data points + labels */}
         {actNorm.map((y, i) => y !== null && (
           <g key={`a${i}`}>
             <circle cx={PAD_L + i * xStep} cy={y} r="4" fill="var(--purple)" />
