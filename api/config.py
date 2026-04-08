@@ -21,8 +21,8 @@ if not SECRET_KEY:
         )
 
 # Auth
-APP_PASSWORD = os.environ.get("APP_PASSWORD", "")
-AUTH_SESSION_MINUTES = int(os.environ.get("AUTH_SESSION_MINUTES", "40"))
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "") or os.environ.get("APP_PASSWRD", "")
+AUTH_SESSION_MINUTES = int(os.environ.get("AUTH_SESSION_MINUTES", "30"))
 
 # CORS
 CORS_ORIGIN = os.environ.get("CORS_ORIGIN", "http://localhost:3100")
