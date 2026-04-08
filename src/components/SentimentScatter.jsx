@@ -218,9 +218,9 @@ export default function SentimentScatter({ employees, allUpdates }) {
                 opacity={0.85}
               />
               <text
-                x={toX(pt.x)}
-                y={toY(pt.y) - 8}
-                textAnchor="middle"
+                x={toX(pt.x) + (pt.x > 85 ? -8 : pt.x < 15 ? 8 : 0)}
+                y={pt.y > 90 ? toY(pt.y) + 16 : toY(pt.y) - 8}
+                textAnchor={pt.x > 85 ? 'end' : pt.x < 15 ? 'start' : 'middle'}
                 fill="var(--text)"
                 fontSize={10}
                 fontWeight={600}

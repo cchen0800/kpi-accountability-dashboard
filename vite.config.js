@@ -22,7 +22,11 @@ export default defineConfig({
   server: {
     port: devPort,
     proxy: {
-      '/api': apiProxyTarget,
+      '/api': {
+        target: apiProxyTarget,
+        changeOrigin: true,
+        cookieDomainRewrite: '',
+      },
     },
   },
 })

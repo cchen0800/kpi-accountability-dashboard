@@ -24,6 +24,7 @@ export async function get(path, { retries = MAX_RETRIES, timeout = DEFAULT_TIMEO
     try {
       const res = await fetchWithTimeout(`${BASE}${path}`, {
         headers: { ...getAuthHeaders() },
+        credentials: 'include',
       }, timeout)
       if (res.status === 401) {
         localStorage.removeItem('auth_token')
@@ -51,6 +52,7 @@ export async function post(path, body, { timeout = DEFAULT_TIMEOUT } = {}) {
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+      credentials: 'include',
       body: body ? JSON.stringify(body) : undefined,
     },
     timeout,
