@@ -257,7 +257,7 @@ export default function Dashboard() {
           ) : (
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))',
+              gridTemplateColumns: `repeat(${sorted.length || 5}, 1fr)`,
               gap: 14,
             }}>
               {sorted.map((emp, i) => {
