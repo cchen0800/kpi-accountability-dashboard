@@ -143,3 +143,14 @@ class AnalysisResult(db.Model):
             'recommended_action': self.recommended_action,
             'submission_rate': self.submission_rate,
         }
+
+
+class PageView(db.Model):
+    __tablename__ = 'page_views'
+
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    timestamp = db.Column(db.DateTime, nullable=False)
+    ip = db.Column(db.Text)
+    path = db.Column(db.Text)
+    user_agent = db.Column(db.Text)
+    referer = db.Column(db.Text)

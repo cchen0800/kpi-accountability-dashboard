@@ -20,6 +20,10 @@ if not SECRET_KEY:
             "Set FLASK_DEBUG=1 for development or provide a secure SECRET_KEY."
         )
 
+# Auth
+APP_PASSWORD = os.environ.get("APP_PASSWORD", "")
+AUTH_SESSION_MINUTES = int(os.environ.get("AUTH_SESSION_MINUTES", "40"))
+
 # CORS
 CORS_ORIGIN = os.environ.get("CORS_ORIGIN", "http://localhost:3100")
 

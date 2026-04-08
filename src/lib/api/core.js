@@ -3,6 +3,11 @@ const DEFAULT_TIMEOUT = 30000
 const MAX_RETRIES = 2
 const BASE_BACKOFF = 300
 
+function getAuthHeaders() {
+  const token = localStorage.getItem('auth_token')
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 export async function fetchWithTimeout(url, options = {}, timeout = DEFAULT_TIMEOUT) {
   const controller = new AbortController()
   const id = setTimeout(() => controller.abort(), timeout)
@@ -17,11 +22,19 @@ export async function get(path, { retries = MAX_RETRIES, timeout = DEFAULT_TIMEO
   let lastError
   for (let attempt = 0; attempt <= retries; attempt++) {
     try {
-      const res = await fetchWithTimeout(`${BASE}${path}`, {}, timeout)
+      const res = await fetchWithTimeout(`${BASE}${path}`, {
+        headers: { ...getAuthHeaders() },
+      }, timeout)
+      if (res.status === 401) {
+        localStorage.removeItem('auth_token')
+        window.dispatchEvent(new Event('auth-expired'))
+        throw new Error('Session expired')
+      }
       if (!res.ok) throw new Error(`API ${res.status}: ${path}`)
       return res.json()
     } catch (e) {
       lastError = e
+      if (e.message === 'Session expired') throw e
       if (attempt < retries) {
         const jitter = Math.random() * 0.5 + 0.75
         const delay = BASE_BACKOFF * Math.pow(2, attempt) * jitter
@@ -37,11 +50,16 @@ export async function post(path, body, { timeout = DEFAULT_TIMEOUT } = {}) {
     `${BASE}${path}`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
       body: body ? JSON.stringify(body) : undefined,
     },
     timeout,
   )
+  if (res.status === 401) {
+    localStorage.removeItem('auth_token')
+    window.dispatchEvent(new Event('auth-expired'))
+    throw new Error('Session expired')
+  }
   if (res.status === 409) {
     const data = await res.json().catch(() => ({}))
     const err = new Error(data.error || 'Pipeline already running')

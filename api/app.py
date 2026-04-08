@@ -41,10 +41,15 @@ def create_app():
     db.init_app(app)
 
     # Register blueprints
+    from routes.auth import auth_bp, require_auth
     from routes.pipeline import pipeline_bp
     from routes.employees import employees_bp
+    app.register_blueprint(auth_bp)
     app.register_blueprint(pipeline_bp)
     app.register_blueprint(employees_bp)
+
+    # Auth middleware
+    app.before_request(require_auth)
 
     # Health check
     @app.route("/api/health")
