@@ -45,7 +45,7 @@ function KpiProgressBar({ kpi }) {
         <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)', flex: 1, minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
           {kpi.kpi_name}
         </span>
-        {kpi.delta && kpi.delta !== '—' && (
+        {kpi.delta && kpi.delta !== '-' && (
           <span className="mono" style={{ fontSize: 11, fontWeight: 700, color: deltaColor, marginLeft: 8, flexShrink: 0 }}>
             {kpi.delta}
           </span>
@@ -67,7 +67,7 @@ function KpiProgressBar({ kpi }) {
             }} />
           </div>
           <div className="mono" style={{ fontSize: 10, color: 'var(--text-ghost)', marginTop: 2 }}>
-            {kpi.actual} / {kpi.target}
+            {kpi.actual} / {kpi.target}{progress.isInverted ? ' (lower is better)' : ''}
           </div>
         </>
       ) : isMissing ? (
@@ -75,9 +75,10 @@ function KpiProgressBar({ kpi }) {
           <div style={{
             height: 6, borderRadius: 3,
             background: 'var(--bg)',
+            border: '1px dashed var(--border)',
           }} />
-          <div className="mono" style={{ fontSize: 10, color: 'var(--text-ghost)', marginTop: 2 }}>
-            no data
+          <div style={{ fontSize: 10, color: 'var(--text-ghost)', marginTop: 2, fontStyle: 'italic' }}>
+            not reported
           </div>
         </>
       ) : isQualitative ? (
@@ -117,7 +118,7 @@ export default function EmployeeCard({ employee, index, priorityRank }) {
         background: flagStyle.color,
       }} />
 
-      {/* 1. Header — name, role, department, flag badge */}
+      {/* 1. Header - name, role, department, flag badge */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 4 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
           {priorityRank && (
@@ -172,7 +173,7 @@ export default function EmployeeCard({ employee, index, priorityRank }) {
             </div>
           )}
 
-          {/* 3. Summary — AI analysis text */}
+          {/* 3. Summary - AI analysis text */}
           <div style={{
             marginTop: 12,
             fontSize: 13,
@@ -183,7 +184,7 @@ export default function EmployeeCard({ employee, index, priorityRank }) {
             {analysis.summary}
           </div>
 
-          {/* 4. Submission Rate (demoted — ghost text) */}
+          {/* 4. Submission Rate (demoted - ghost text) */}
           <div style={{
             marginTop: 8,
             fontSize: 11,

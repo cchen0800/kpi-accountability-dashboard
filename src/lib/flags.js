@@ -1,4 +1,4 @@
-// Shared flag constants — severity ordering, colors, labels
+// Shared flag constants - severity ordering, colors, labels
 // Performance flags rank above process flags (CEO-focused)
 
 export const FLAG_SEVERITY = {
@@ -35,7 +35,7 @@ export function worstDelta(employee) {
   const kpis = employee.kpi_extractions || []
   let worst = 0
   for (const kpi of kpis) {
-    if (!kpi.delta || kpi.delta === '—') continue
+    if (!kpi.delta || kpi.delta === '-') continue
     const match = kpi.delta.match(/^[+-]?(\d+(?:\.\d+)?)/)
     if (!match) continue
     const num = parseFloat(kpi.delta)

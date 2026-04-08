@@ -2,7 +2,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard' },
-  { path: '/pipeline', label: 'Pipeline' },
+  { path: '/pipeline', label: 'Agentic Pipeline' },
 ]
 
 export default function NavBar() {
@@ -13,7 +13,8 @@ export default function NavBar() {
     <nav style={{
       display: 'flex',
       alignItems: 'center',
-      justifyContent: 'space-between',
+      justifyContent: 'center',
+      position: 'relative',
       padding: '0 28px',
       height: 48,
       borderBottom: '1px solid var(--border)',
@@ -21,7 +22,7 @@ export default function NavBar() {
       flexShrink: 0,
     }}>
       {/* Logo + title */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'absolute', left: 28 }}>
         <div style={{
           width: 26, height: 26, borderRadius: 6,
           background: 'linear-gradient(135deg, var(--accent), var(--purple))',

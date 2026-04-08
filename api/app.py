@@ -1,4 +1,4 @@
-"""KPI Accountability Dashboard — Flask API
+"""KPI Accountability Dashboard - Flask API
 
 Application factory. Registers blueprints, initializes DB, and handles SPA serving.
 """

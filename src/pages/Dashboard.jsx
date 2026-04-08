@@ -54,7 +54,7 @@ export default function Dashboard() {
 
     // Find employees furthest from targets (worst deltas)
     const withDeltas = employees
-      .filter(e => (e.kpi_extractions || []).some(k => k.delta && k.delta !== '—' && parseFloat(k.delta) < 0))
+      .filter(e => (e.kpi_extractions || []).some(k => k.delta && k.delta !== '-' && parseFloat(k.delta) < 0))
       .sort((a, b) => worstDelta(a) - worstDelta(b))
       .slice(0, 2)
       .map(e => e.name)
@@ -65,7 +65,7 @@ export default function Dashboard() {
 
   return (
     <>
-      {/* Slack drawer — slides in from the left */}
+      {/* Slack drawer - slides in from the left */}
       <div style={{
         position: 'fixed',
         top: 0,
@@ -175,7 +175,7 @@ export default function Dashboard() {
                 Team Performance
               </h1>
               <div style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500, marginTop: 1 }}>
-                Lumen Collective — Agentic Performance Analysis
+                Lumen Collective - Agentic Performance Analysis
               </div>
             </div>
           </div>
@@ -267,7 +267,7 @@ export default function Dashboard() {
             {[
               { label: 'Tokens Used', value: lastRun.total_tokens?.toLocaleString() },
               { label: 'Cost', value: `$${(lastRun.total_cost_cents / 100).toFixed(4)}` },
-              { label: 'Duration', value: lastRun.duration_seconds ? `${lastRun.duration_seconds.toFixed(1)}s` : '—' },
+              { label: 'Duration', value: lastRun.duration_seconds ? `${lastRun.duration_seconds.toFixed(1)}s` : '-' },
             ].map(item => (
               <div key={item.label} style={{ textAlign: 'center' }}>
                 <div style={{
@@ -279,7 +279,7 @@ export default function Dashboard() {
                 <div className="mono" style={{
                   fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginTop: 2,
                 }}>
-                  {item.value || '—'}
+                  {item.value || '-'}
                 </div>
               </div>
             ))}

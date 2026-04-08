@@ -1,19 +1,18 @@
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']
 const DAY_MAP = { monday: 0, tuesday: 1, wednesday: 2, thursday: 3, friday: 4 }
 
-function extractDailyMetrics(updates) {
+function extractDailyMetrics(updates, kpis) {
   if (!updates || updates.length === 0) return null
 
-  // Try to find two numeric KPIs that have daily values
-  const dailyData = {}
   const metricPatterns = [
     { pattern: /(\d+)\s*dials?/i, label: 'Dials' },
-    { pattern: /(\d+)\s*meetings?\s*(?:booked|locked|qualified)/i, label: 'Meetings Booked' },
+    { pattern: /(\d+)\s*meetings?\s*(?:booked|locked|qualified|set)/i, label: 'Meetings Booked' },
     { pattern: /(\d+)\s*creators?\s*(?:onboarded|added|brought)/i, label: 'Creators Onboarded' },
     { pattern: /ROAS\s*(?:of\s*)?(\d+\.?\d*)x/i, label: 'ROAS' },
     { pattern: /(\d+\.?\d*)%\s*CTR/i, label: 'CTR %' },
   ]
 
+  const dailyData = {}
   for (const update of updates) {
     const dayIdx = DAY_MAP[update.day?.toLowerCase()]
     if (dayIdx === undefined) continue
@@ -32,6 +31,36 @@ function extractDailyMetrics(updates) {
     .filter(([, vals]) => vals.filter(v => v !== null).length >= 3)
 
   if (viable.length < 2) return null
+
+  // Cross-check against structured KPI data to reject nonsensical regex extractions.
+  // The regex grabs numbers from free-text GPT output which is inherently unreliable.
+  if (kpis && kpis.length > 0) {
+    for (const [label, vals] of viable) {
+      const nums = vals.filter(v => v !== null)
+      const sum = nums.reduce((a, b) => a + b, 0)
+      const max = Math.max(...nums)
+
+      // Find matching KPI from extraction stage
+      const matchingKpi = kpis.find(k => {
+        const name = (k.kpi_name || '').toLowerCase()
+        return (label === 'Dials' && name.includes('dial')) ||
+               (label === 'Meetings Booked' && name.includes('meeting')) ||
+               (label === 'Creators Onboarded' && name.includes('creator') && name.includes('onboard'))
+      })
+
+      if (matchingKpi) {
+        const actualNum = parseFloat((matchingKpi.actual || '').match(/(\d+(?:\.\d+)?)/)?.[1])
+        const targetNum = parseFloat((matchingKpi.target || '').match(/(\d+(?:\.\d+)?)/)?.[1])
+        // If the daily sum is wildly off from the extracted weekly actual, bail
+        if (!isNaN(actualNum) && actualNum > 0) {
+          const ratio = sum / actualNum
+          if (ratio < 0.3 || ratio > 3) return null
+        }
+        // If max daily value exceeds the weekly target, the regex grabbed wrong numbers
+        if (!isNaN(targetNum) && targetNum > 0 && max > targetNum * 1.5) return null
+      }
+    }
+  }
 
   // Prefer dials + meetings for the vanity metrics showcase
   const dialsEntry = viable.find(([label]) => label === 'Dials')
@@ -54,7 +83,7 @@ function normalize(values, height) {
 }
 
 export default function DualChart({ updates, kpis }) {
-  const metrics = extractDailyMetrics(updates)
+  const metrics = extractDailyMetrics(updates, kpis)
   if (!metrics) return null
 
   const W = 360
@@ -94,12 +123,12 @@ export default function DualChart({ updates, kpis }) {
           />
         ))}
 
-        {/* Activity line (purple/blue — effort) */}
+        {/* Activity line (purple - effort) */}
         {actPath && (
           <path d={actPath} fill="none" stroke="var(--purple)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         )}
 
-        {/* Outcome line (danger — results declining) */}
+        {/* Outcome line (danger - results) */}
         {outPath && (
           <path d={outPath} fill="none" stroke="var(--danger)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
         )}

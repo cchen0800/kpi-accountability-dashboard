@@ -39,7 +39,7 @@ def list_employees():
 
 @employees_bp.route('/api/updates')
 def all_updates():
-    """All employee updates from latest run — for the combined Slack feed."""
+    """All employee updates from latest run - for the combined Slack feed."""
     latest_run = PipelineRun.query.filter_by(status='complete').order_by(PipelineRun.id.desc()).first()
     if not latest_run:
         return jsonify([])

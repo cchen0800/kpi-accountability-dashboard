@@ -24,9 +24,9 @@ const STATUS_STYLES = {
 const AVATAR_COLORS = ['#2EB67D', '#E01E5A', '#ECB22E', '#36C5F0', '#7C3AED']
 
 const TABS = [
-  { key: 'generate', label: 'Stage 1 — Generated Standups', shortLabel: 'Standups' },
-  { key: 'extract', label: 'Stage 2 — Extracted KPIs', shortLabel: 'KPIs' },
-  { key: 'reason', label: 'Stage 3 — Accountability Flags', shortLabel: 'Flags' },
+  { key: 'generate', label: 'Stage 1: Generated Standups', shortLabel: 'Standups' },
+  { key: 'extract', label: 'Stage 2: Extracted KPIs', shortLabel: 'KPIs' },
+  { key: 'reason', label: 'Stage 3: Accountability Flags', shortLabel: 'Flags' },
 ]
 
 function getInitials(name) {
@@ -44,6 +44,7 @@ export default function Pipeline() {
   const [direction, setDirection] = useState(0)
   const [sessionRuns, setSessionRuns] = useState(0)
   const lastRunIdRef = useRef(null)
+  const [introExpanded, setIntroExpanded] = useState(true)
 
   const TAB_INDEX = { generate: 0, extract: 1, reason: 2 }
 
@@ -122,6 +123,74 @@ export default function Pipeline() {
       minHeight: 0,
       height: 'calc(100vh - 48px - var(--viewport-footer-gap))',
     }}>
+      {/* Context intro */}
+      <div className="card animate-in" style={{
+        borderLeft: '3px solid var(--accent)',
+        padding: 0,
+        marginBottom: 20,
+        overflow: 'hidden',
+      }}>
+        <button
+          onClick={() => setIntroExpanded(prev => !prev)}
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 16px',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: 'var(--font)',
+          }}
+        >
+          <span style={{
+            fontSize: 13,
+            fontWeight: 700,
+            color: 'var(--text)',
+            letterSpacing: '-0.01em',
+          }}>
+            Can AI catch what a CEO would miss?
+          </span>
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="var(--text-ghost)"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{
+              transition: 'transform 0.2s ease',
+              transform: introExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+              flexShrink: 0,
+            }}
+          >
+            <polyline points="6 9 12 15 18 9" />
+          </svg>
+        </button>
+        <div style={{
+          maxHeight: introExpanded ? 200 : 0,
+          opacity: introExpanded ? 1 : 0,
+          transition: 'max-height 0.25s ease, opacity 0.2s ease',
+          overflow: 'hidden',
+        }}>
+          <div style={{
+            padding: '0 16px 12px',
+            fontSize: 12.5,
+            lineHeight: 1.6,
+            color: 'var(--text-secondary)',
+          }}>
+            Lumen Collective (Series C, 180 employees) mandated daily Slack standups.
+            This pipeline runs 3 independent AI agents sequentially - one generates
+            realistic updates, one extracts KPIs blind, one reasons over the data to
+            flag accountability gaps. No agent sees the full picture. Can they still
+            surface the blind spots?
+          </div>
+        </div>
+      </div>
+
       {/* Pipeline control (stage cards) */}
       <PipelineControl onComplete={loadOutputs} onReset={() => {
         setGenerateOutput(null)
@@ -350,8 +419,8 @@ export default function Pipeline() {
                               )}
                               <td style={{ padding: '8px 10px', color: 'var(--text-secondary)', fontWeight: 500 }}>{row.kpi_name}</td>
                               <td className="mono" style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>{row.target}</td>
-                              <td className="mono" style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>{row.actual}</td>
-                              <td className="mono" style={{ padding: '8px 10px', color: 'var(--text-secondary)' }}>{row.delta}</td>
+                              <td className="mono" style={{ padding: '8px 10px', color: row.status === 'missing' ? 'var(--text-ghost)' : 'var(--text-secondary)', fontStyle: row.status === 'missing' ? 'italic' : 'normal' }}>{row.status === 'missing' ? 'not reported' : row.actual}</td>
+                              <td className="mono" style={{ padding: '8px 10px', color: row.status === 'missing' ? 'var(--text-ghost)' : 'var(--text-secondary)', fontStyle: row.status === 'missing' ? 'italic' : 'normal' }}>{row.status === 'missing' ? '' : row.delta}</td>
                               <td style={{ padding: '8px 10px' }}>
                                 <span className="badge" style={{
                                   background: statusStyle.color + '18',
@@ -495,7 +564,7 @@ export default function Pipeline() {
             { label: 'Session Runs', value: sessionRuns.toString() },
             { label: 'Tokens Used', value: lastRun.total_tokens?.toLocaleString() },
             { label: 'Cost', value: `$${(lastRun.total_cost_cents / 100).toFixed(4)}` },
-            { label: 'Duration', value: lastRun.duration_seconds ? `${lastRun.duration_seconds.toFixed(1)}s` : '—' },
+            { label: 'Duration', value: lastRun.duration_seconds ? `${lastRun.duration_seconds.toFixed(1)}s` : '-' },
           ].map(item => (
             <div key={item.label} style={{ textAlign: 'center' }}>
               <div style={{
@@ -507,7 +576,7 @@ export default function Pipeline() {
               <div className="mono" style={{
                 fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginTop: 2,
               }}>
-                {item.value || '—'}
+                {item.value || '-'}
               </div>
             </div>
           ))}

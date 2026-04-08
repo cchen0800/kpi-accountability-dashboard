@@ -10,6 +10,7 @@ const STAGES = [
     runningStatus: 'generating',
     doneStatus: 'stage_generate_done',
     label: 'Generate Standups',
+    estimate: '~30s',
     description: 'GPT creates realistic daily standup updates for each employee using their writing style and hidden performance truth.',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -22,7 +23,7 @@ const STAGES = [
     runningStatus: 'extracting',
     doneStatus: 'stage_extract_done',
     label: 'Extract KPIs',
-    description: 'A second GPT agent reads the standups and extracts structured KPI data — targets, actuals, deltas — without seeing the hidden truth.',
+    description: 'A second GPT agent reads the standups and extracts structured KPI data - targets, actuals, deltas - without seeing the hidden truth.',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="9" y1="21" x2="9" y2="9" />
@@ -52,14 +53,14 @@ function getStageState(stageIndex, pipelineStatus) {
   // This stage is done
   if (pipelineStatus === stage.doneStatus) return 'done'
 
-  // A later stage is running or done — this one must be done
+  // A later stage is running or done - this one must be done
   for (let i = stageIndex + 1; i < STAGES.length; i++) {
     if (pipelineStatus === STAGES[i].runningStatus ||
         pipelineStatus === STAGES[i].doneStatus) return 'done'
   }
   if (pipelineStatus === 'complete') return 'done'
 
-  // Previous stage is done — this one is ready
+  // Previous stage is done - this one is ready
   if (stageIndex === 0) return 'ready'
   const prev = STAGES[stageIndex - 1]
   if (pipelineStatus === prev.doneStatus) return 'ready'
@@ -115,7 +116,7 @@ export default function PipelineControl({ onComplete, onReset }) {
       if (e.status === 409) {
         if (!pollRef.current) pollRef.current = setInterval(poll, 2000)
         await poll()
-        setStatus(prev => ({ ...prev, error: 'Pipeline already running — try again in a moment' }))
+        setStatus(prev => ({ ...prev, error: 'Pipeline already running - try again in a moment' }))
       } else {
         setStatus({ status: 'error', stage: null, error: e.message || 'Failed to start stage' })
       }
@@ -130,7 +131,7 @@ export default function PipelineControl({ onComplete, onReset }) {
             Agentic Analysis Pipeline
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500, marginTop: 2 }}>
-            Three independent GPT agents process data sequentially — each stage unlocks the next
+            Three independent GPT agents process data sequentially - each stage unlocks the next
           </div>
         </div>
         {!isRunning && status.status !== 'idle' && (
@@ -143,14 +144,17 @@ export default function PipelineControl({ onComplete, onReset }) {
               if (onReset) onReset()
             }}
             style={{
-              display: 'flex', alignItems: 'center', gap: 4,
-              background: 'none', border: 'none', padding: '4px 0',
-              fontSize: 11, fontWeight: 600, color: 'var(--text-ghost)',
+              display: 'flex', alignItems: 'center', gap: 5,
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
+              padding: '6px 12px',
+              fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)',
               fontFamily: 'var(--font)', cursor: 'pointer',
-              transition: 'color 0.2s ease', flexShrink: 0,
+              transition: 'all 0.2s ease', flexShrink: 0,
             }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--danger)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-ghost)'}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--danger)'; e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.background = 'var(--danger-dim)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'var(--bg)' }}
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
@@ -212,6 +216,14 @@ export default function PipelineControl({ onComplete, onReset }) {
                   }}>
                     {stage.label}
                   </span>
+                  {stage.estimate && !isDone && (
+                    <span className="mono" style={{
+                      fontSize: 10, fontWeight: 500,
+                      color: 'var(--text-ghost)',
+                    }}>
+                      {stage.estimate}
+                    </span>
+                  )}
                 </div>
                 <div style={{
                   color: isDone ? 'var(--success)' : isActive ? 'var(--accent)' : 'var(--text-ghost)',

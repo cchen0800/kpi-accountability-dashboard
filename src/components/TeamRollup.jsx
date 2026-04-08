@@ -15,7 +15,7 @@ const FLAG_CONFIG = {
   submission_gap: {
     color: '#B45309',
     label: 'Submission Gap',
-    description: 'Missing some standup submissions on expected days. A minor process issue — check if cadence needs adjustment.',
+    description: 'Missing some standup submissions on expected days. A minor process issue - check if cadence needs adjustment.',
   },
   vanity_metrics: {
     color: '#7C3AED',
@@ -52,7 +52,7 @@ function getBiggestGaps(employees) {
   const gaps = []
   for (const emp of employees) {
     for (const kpi of (emp.kpi_extractions || [])) {
-      if (!kpi.delta || kpi.delta === '—') continue
+      if (!kpi.delta || kpi.delta === '-') continue
       const num = parseFloat(kpi.delta)
       if (isNaN(num) || num >= 0) continue
       gaps.push({ name: emp.name, kpiName: kpi.kpi_name, delta: kpi.delta, numDelta: num })

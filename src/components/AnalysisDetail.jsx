@@ -18,7 +18,7 @@ export default function AnalysisDetail({ analysis }) {
         flexDirection: 'column',
         gap: 6,
       }}>
-        {(analysis.detail || '').split(/\n|(?:^|\n)•/).filter(line => line.trim()).map((line, i) => (
+        {(analysis.detail || '').split(/\n|•/).filter(line => line.trim()).map((line, i) => (
           <li key={i} style={{ paddingLeft: 2 }}>
             {line.replace(/^[•\-]\s*/, '').trim()}
           </li>

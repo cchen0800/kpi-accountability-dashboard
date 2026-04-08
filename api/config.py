@@ -33,7 +33,7 @@ DB_DIR = os.environ.get("DB_DIR", os.path.join(os.path.dirname(__file__), '..', 
 DB_PATH = os.path.join(DB_DIR, "data.db")
 SQLALCHEMY_DATABASE_URI = f"sqlite:///{DB_PATH}"
 
-# Synthetic data path — check sibling (Docker) then parent (local dev)
+# Synthetic data path - check sibling (Docker) then parent (local dev)
 _here = os.path.dirname(__file__)
 _candidate = os.path.join(_here, 'synthetic_data.json')
 SYNTHETIC_DATA_PATH = _candidate if os.path.exists(_candidate) else os.path.join(_here, '..', 'synthetic_data.json')

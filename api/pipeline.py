@@ -20,7 +20,7 @@ log = logging.getLogger(__name__)
 
 FICTIONAL_BRANDS = "Northwind Athletics, Petalcrest Beauty, Harborline Foods, Ridgeway Outdoors, Cinderhouse Coffee"
 WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday"]
-MISSING_TOKENS = {"", "-", "—", "n/a", "na", "unknown", "none", "not provided"}
+MISSING_TOKENS = {"", "-", "-", "n/a", "na", "unknown", "none", "not provided"}
 REASON_WORKER_TIMEOUT_SECONDS = max(OPENAI_TIMEOUT_SECONDS + 5.0, 30.0)
 
 
@@ -153,7 +153,7 @@ def _extract_first_number(text):
 
 def _format_number(value):
     if value is None:
-        return "—"
+        return "-"
     if abs(value - round(value)) < 1e-9:
         return str(int(round(value)))
     return f"{value:.1f}"
@@ -421,8 +421,8 @@ def _missing_kpi_row(spec):
     return {
         "name": spec["name"],
         "target": spec["target"],
-        "actual": "—",
-        "delta": "—",
+        "actual": "-",
+        "delta": "-",
         "status": "missing",
     }
 
@@ -431,7 +431,7 @@ def _derive_delta(target, actual, kind):
     t = _target_number(target)
     a = _extract_first_number(actual)
     if t is None or a is None:
-        return "—"
+        return "-"
 
     diff = a - t
     if kind == "duration_threshold":
@@ -443,47 +443,55 @@ def _derive_delta(target, actual, kind):
     return f"{sign}{_format_number(diff)}"
 
 
+def _normalize_actual(actual_str, spec):
+    """Clean GPT actual values to a consistent numeric format."""
+    actual = _clean_str(actual_str)
+    if _is_missing_value(actual):
+        return actual
+
+    # Normalize to clean numeric format matching target style
+    n = _extract_first_number(actual)
+    if n is not None:
+        if "%" in spec["target"]:
+            return f"{_format_number(n)}%"
+        if spec["kind"] == "duration_threshold":
+            return f"{_format_number(n)} hours"
+        if "/week" in spec["target"]:
+            return _format_number(n)
+        return _format_number(n)
+
+    return actual
+
+
 def _normalize_model_row(spec, row, updates):
     if not isinstance(row, dict):
         return _missing_kpi_row(spec)
 
-    actual = _clean_str(row.get("actual"))
-    delta = _clean_str(row.get("delta"))
-    status = _normalize_status(row.get("status"))
+    actual = _normalize_actual(row.get("actual"), spec)
 
     if _is_missing_value(actual):
-        # For quarter_outcome KPIs, missing actual is expected when updates lack numeric evidence
         return _missing_kpi_row(spec)
 
-    if "%" in spec["target"] and "%" not in actual:
-        n = _extract_first_number(actual)
-        if n is not None:
-            actual = f"{_format_number(n)}%"
-    if spec["kind"] == "duration_threshold" and "hr" not in actual.lower() and "hour" not in actual.lower():
-        n = _extract_first_number(actual)
-        if n is not None:
-            actual = f"{_format_number(n)} hours"
+    # Always recalculate delta from actual vs target (GPT deltas are unreliable)
+    delta = _derive_delta(spec["target"], actual, spec["kind"])
 
-    if not _delta_valid(delta):
-        delta = _derive_delta(spec["target"], actual, spec["kind"])
-
-    if not status:
-        t = _target_number(spec["target"])
-        a = _extract_first_number(actual)
-        if a is None:
-            status = "missing"
-        elif spec["kind"] == "duration_threshold" and t is not None:
-            status = "on_track" if a <= t else "at_risk"
-        elif t is not None:
-            status = "on_track" if a >= t else "at_risk"
-        else:
-            status = "at_risk"
+    # Always recalculate status from actual vs target
+    t = _target_number(spec["target"])
+    a = _extract_first_number(actual)
+    if a is None:
+        status = "missing"
+    elif spec["kind"] == "duration_threshold" and t is not None:
+        status = "on_track" if a <= t else "at_risk"
+    elif t is not None:
+        status = "on_track" if a >= t else "at_risk"
+    else:
+        status = "at_risk"
 
     return {
         "name": spec["name"],
         "target": spec["target"],
         "actual": actual,
-        "delta": delta if not _is_missing_value(delta) else "—",
+        "delta": delta if not _is_missing_value(delta) else "-",
         "status": status,
     }
 
@@ -513,7 +521,7 @@ def _extract_quarter_progress(spec, updates):
 
     target_num = _target_number(spec["target"])
     status_summary = ", ".join(dict.fromkeys(s.lower() for s in statuses_found))
-    actual = status_summary if not target_num else f"0/{int(target_num)} — {status_summary}"
+    actual = status_summary if not target_num else f"0/{int(target_num)} - {status_summary}"
     delta = "behind schedule" if has_negative else "progressing"
 
     return {
@@ -863,7 +871,7 @@ def _run_extract_stage(run, employees):
             data = result['data']
             normalized_kpis = _normalize_extracted_kpis(emp, data, emp_updates[emp.id])
         except Exception:
-            log.exception("Stage 2 extraction failed for %s — inserting missing KPI rows", emp.name)
+            log.exception("Stage 2 extraction failed for %s - inserting missing KPI rows", emp.name)
             expected = _build_expected_kpis(emp.kpis)
             normalized_kpis = [_missing_kpi_row(spec) for spec in expected]
 
@@ -922,7 +930,7 @@ def _run_reason_stage(run, employees):
                 data = result['data']
             except FuturesTimeoutError:
                 log.error(
-                    "Stage 3 reasoning timed out for %s after %.1fs — inserting fallback result",
+                    "Stage 3 reasoning timed out for %s after %.1fs - inserting fallback result",
                     emp.name,
                     REASON_WORKER_TIMEOUT_SECONDS,
                 )
@@ -935,7 +943,7 @@ def _run_reason_stage(run, employees):
                     'recommended_action': '',
                 }
             except Exception:
-                log.exception("Stage 3 reasoning failed for %s — inserting fallback result", emp.name)
+                log.exception("Stage 3 reasoning failed for %s - inserting fallback result", emp.name)
                 data = {
                     'flag_type': 'none',
                     'flag_label': 'Error',
@@ -986,7 +994,7 @@ def is_pipeline_running():
         except Exception:
             age = 999
         if age > 300:  # 5 minute timeout
-            log.warning("Pipeline [%d] stuck for %.0fs — marking as error", run.id, age)
+            log.warning("Pipeline [%d] stuck for %.0fs - marking as error", run.id, age)
             run.status = 'error'
             run.error = 'Timed out'
             run.completed_at = datetime.now(timezone.utc)
@@ -1038,8 +1046,8 @@ def _generate_updates(emp):
         f"- Sound like a real Slack message, not a report\n"
         f"- Match the writing style in tone, structure, and vocabulary\n"
         f"- Reference fictional brand clients naturally (listed in system prompt)\n"
-        f"- Embed the hidden truth subtly — don't make it obvious\n"
-        f"- Include at least one extractable progress indicator per KPI per update — a count, a status word (signed/stalled/blocked/shipped), a milestone, or a percentage. The writing style controls HOW things are said, not WHETHER progress evidence appears.\n\n"
+        f"- Embed the hidden truth subtly - don't make it obvious\n"
+        f"- Include at least one extractable progress indicator per KPI per update - a count, a status word (signed/stalled/blocked/shipped), a milestone, or a percentage. The writing style controls HOW things are said, not WHETHER progress evidence appears.\n\n"
         f"Return JSON: {{\"updates\": [{{\"day\": \"monday\", \"content\": \"...\"}}]}}"
     )
 
@@ -1087,7 +1095,7 @@ def _extract_kpis(emp, updates):
     )
     system = (
         "You are a data extraction agent. Parse daily standup updates and extract "
-        "structured KPI performance data. Do not interpret or judge — just extract. "
+        "structured KPI performance data. Do not interpret or judge - just extract. "
         "Return valid JSON.\n\n"
         "IMPORTANT EXTRACTION RULES:\n"
         "- 'target', 'actual', and 'delta' must each be a short scalar string.\n"
@@ -1113,10 +1121,10 @@ def _extract_kpis(emp, updates):
         f"Extract:\n"
         f"1. For each KPI target, produce one KPI row with deterministic aggregation rules from system prompt.\n"
         f"2. Submission compliance: count exactly which days (Mon-Fri) have an update above. "
-        f"If a day is not listed, it is MISSING — the employee did not submit that day.\n\n"
+        f"If a day is not listed, it is MISSING - the employee did not submit that day.\n\n"
         f"Return JSON:\n"
         f"{{\n"
-        f"  \"kpis\": [{{\"name\": \"short KPI name (use names closely matching the KPI targets above)\", \"target\": \"single value\", \"actual\": \"single value\", \"delta\": \"+/- single value or —\", \"status\": \"on_track|at_risk|missing\"}}],\n"
+        f"  \"kpis\": [{{\"name\": \"short KPI name (use names closely matching the KPI targets above)\", \"target\": \"single value\", \"actual\": \"single value\", \"delta\": \"+/- single value or -\", \"status\": \"on_track|at_risk|missing\"}}],\n"
         f"  \"submission_rate\": \"X/5\",\n"
         f"  \"days_submitted\": [\"monday\", \"tuesday\", ...]\n"
         f"}}"
@@ -1125,7 +1133,7 @@ def _extract_kpis(emp, updates):
 
 
 def _condense_updates(updates):
-    """Trim each update to first 400 chars for Stage 3 — KPIs already extracted."""
+    """Trim each update to first 400 chars for Stage 3 - KPIs already extracted."""
     lines = []
     for u in updates:
         day = u.get('day', 'unknown').title()
@@ -1149,18 +1157,18 @@ def _reason_accountability(emp, extraction, updates):
         "Focus your summary on METRIC PERFORMANCE: how far the employee is from their KPI targets "
         "and trajectory. Submission cadence is secondary context.\n\n"
         "CLASSIFICATION RULES (check in this exact order):\n"
-        "1. no_progress — The same blocker, task, or issue is repeated across 3+ days with no "
+        "1. no_progress - The same blocker, task, or issue is repeated across 3+ days with no "
         "escalation, resolution, or meaningful forward movement. The employee is stuck.\n"
-        "2. vanity_metrics — Activity/effort metrics (calls made, emails sent, tasks completed) "
+        "2. vanity_metrics - Activity/effort metrics (calls made, emails sent, tasks completed) "
         "look strong, BUT outcome metrics (revenue, meetings booked, deals closed) are declining "
         "or flat. The employee emphasizes activity to mask poor outcomes.\n"
-        "3. optimism_gap — The employee uses consistently positive/optimistic language ('feeling good,' "
+        "3. optimism_gap - The employee uses consistently positive/optimistic language ('feeling good,' "
         "'great call,' 'almost there') but the underlying metrics are declining, stalled, or absent.\n"
-        "4. submission_gap — The employee submitted fewer than 5/5 daily updates, OR there are "
+        "4. submission_gap - The employee submitted fewer than 5/5 daily updates, OR there are "
         "multi-day gaps in their submission cadence. This is a process issue, not a performance issue.\n"
-        "5. none — The employee is genuinely on track. Metrics meet or exceed targets, submissions "
+        "5. none - The employee is genuinely on track. Metrics meet or exceed targets, submissions "
         "are consistent, and there are no red flags.\n\n"
-        "You MUST pick exactly one. Do NOT default to optimism_gap — only use it if the other "
+        "You MUST pick exactly one. Do NOT default to optimism_gap - only use it if the other "
         "flags above genuinely do not apply."
     )
     user = (
@@ -1183,7 +1191,7 @@ def _reason_accountability(emp, extraction, updates):
         f"  \"flag_label\": \"Human-readable label\",\n"
         f"  \"summary\": \"2-line summary focused on metric performance and distance to targets. Lead with numbers.\",\n"
         f"  \"detail\": \"Single string field. Include concise evidence points separated by newlines (can use • within the string).\",\n"
-        f"  \"recommended_action\": \"One specific action the CEO should take THIS WEEK (e.g., 'Pull Sean into a 1:1 Monday to discuss daily submission commitment' — not vague advice)\"\n"
+        f"  \"recommended_action\": \"One specific action the CEO should take THIS WEEK (e.g., 'Pull Sean into a 1:1 Monday to discuss daily submission commitment' - not vague advice)\"\n"
         f"}}"
     )
     return call_gpt(system, user, temperature=0.3)

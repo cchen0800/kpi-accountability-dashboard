@@ -46,13 +46,13 @@ export default function KpiTable({ kpis }) {
                   {kpi.kpi_name}
                 </td>
                 <td className="mono" style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>
-                  {kpi.target || '—'}
+                  {kpi.target || '-'}
                 </td>
-                <td className="mono" style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>
-                  {kpi.actual || '—'}
+                <td className="mono" style={{ padding: '12px 16px', color: kpi.status === 'missing' ? 'var(--text-ghost)' : 'var(--text-secondary)', fontStyle: kpi.status === 'missing' ? 'italic' : 'normal' }}>
+                  {kpi.status === 'missing' ? 'not reported' : (kpi.actual || '-')}
                 </td>
-                <td className="mono" style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>
-                  {kpi.delta || '—'}
+                <td className="mono" style={{ padding: '12px 16px', color: kpi.status === 'missing' ? 'var(--text-ghost)' : 'var(--text-secondary)', fontStyle: kpi.status === 'missing' ? 'italic' : 'normal' }}>
+                  {kpi.status === 'missing' ? '' : (kpi.delta || '-')}
                 </td>
                 <td style={{ padding: '12px 16px' }}>
                   <span className="badge" style={{
