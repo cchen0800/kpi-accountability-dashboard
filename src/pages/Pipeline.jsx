@@ -109,7 +109,7 @@ export default function Pipeline() {
       flexDirection: 'column',
       flex: 1,
       minHeight: 0,
-      height: 'calc(100vh - 48px - var(--viewport-footer-gap))',
+      minHeight: 'calc(100vh - 48px - var(--viewport-footer-gap))',
     }}>
       {/* Context intro */}
       <div className="card animate-in" style={{
@@ -242,7 +242,8 @@ export default function Pipeline() {
                       i + 1
                     )}
                   </span>
-                  {tab.shortLabel}
+                  <span className="mobile-hide">{tab.label}</span>
+                  <span className="mobile-show">{tab.shortLabel}</span>
                 </button>
               )
             })}

@@ -165,7 +165,7 @@ export default function PipelineControl({ onComplete, onReset }) {
       </div>
 
       {/* Three stage cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
         {STAGES.map((stage, i) => {
           const state = getStageState(i, status.status)
           const isActive = state === 'running'

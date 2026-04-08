@@ -212,10 +212,14 @@ body {
 /* Selection */
 ::selection { background: rgba(37, 80, 232, 0.15); }
 
+/* Default: hide mobile-only elements */
+.mobile-show { display: none !important; }
+
 /* Tablet */
 @media (max-width: 900px) {
   .mobile-stack { grid-template-columns: 1fr !important; }
   .mobile-hide { display: none !important; }
+  .mobile-show { display: inline !important; }
 }
 
 /* Mobile */
@@ -225,4 +229,5 @@ body {
   .section-header { font-size: 10px; margin-bottom: 10px; }
   .badge { font-size: 10px; padding: 2px 7px; }
   .nav-title { display: none !important; }
+  .mobile-show { display: inline !important; }
 }

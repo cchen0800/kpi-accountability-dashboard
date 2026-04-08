@@ -4,8 +4,8 @@ import { useAtom } from 'jotai'
 import { lastRunAtom } from '../lib/store/pipeline'
 
 const NAV_ITEMS = [
-  { path: '/', label: 'Dashboard' },
-  { path: '/pipeline', label: 'Agentic Pipeline' },
+  { path: '/', label: 'KPI Accountability', shortLabel: 'Dashboard' },
+  { path: '/pipeline', label: 'Agentic Pipeline', shortLabel: 'Pipeline' },
 ]
 
 export default function NavBar() {
@@ -86,7 +86,8 @@ export default function NavBar() {
               onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = 'var(--text-secondary)' }}
               onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = 'var(--text-tertiary)' }}
             >
-              {item.label}
+              <span className="mobile-hide">{item.label}</span>
+              <span className="mobile-show">{item.shortLabel}</span>
             </button>
           )
         })}
