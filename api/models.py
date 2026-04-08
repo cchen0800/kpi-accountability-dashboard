@@ -31,12 +31,20 @@ class Employee(db.Model):
 
     @classmethod
     def seed_from_json(cls, path):
-        """Load employee profiles from synthetic_data.json and seed the DB."""
+        """Load employee profiles from synthetic_data.json and upsert into the DB."""
         with open(path, 'r', encoding='utf-8') as f:
             data = json.load(f)
 
         for emp in data['employees']:
-            if not cls.query.get(emp['id']):
+            existing = cls.query.get(emp['id'])
+            if existing:
+                existing.name = emp['name']
+                existing.role = emp['role']
+                existing.manager = emp['manager']
+                existing.kpis = json.dumps(emp['kpis'])
+                existing.writing_style = emp['writing_style']
+                existing.hidden_truth = emp['hidden_truth']
+            else:
                 db.session.add(cls(
                     id=emp['id'],
                     name=emp['name'],

@@ -21,7 +21,7 @@ if not SECRET_KEY:
         )
 
 # CORS
-CORS_ORIGIN = os.environ.get("CORS_ORIGIN", "http://localhost:5173")
+CORS_ORIGIN = os.environ.get("CORS_ORIGIN", "http://localhost:3000")
 
 # OpenAI
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
@@ -32,5 +32,7 @@ DB_DIR = os.environ.get("DB_DIR", os.path.join(os.path.dirname(__file__), '..', 
 DB_PATH = os.path.join(DB_DIR, "data.db")
 SQLALCHEMY_DATABASE_URI = f"sqlite:///{DB_PATH}"
 
-# Synthetic data path
-SYNTHETIC_DATA_PATH = os.path.join(os.path.dirname(__file__), '..', 'synthetic_data.json')
+# Synthetic data path — check sibling (Docker) then parent (local dev)
+_here = os.path.dirname(__file__)
+_candidate = os.path.join(_here, 'synthetic_data.json')
+SYNTHETIC_DATA_PATH = _candidate if os.path.exists(_candidate) else os.path.join(_here, '..', 'synthetic_data.json')

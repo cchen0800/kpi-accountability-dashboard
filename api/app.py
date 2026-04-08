@@ -57,10 +57,9 @@ def create_app():
     # Init DB and seed employees
     with app.app_context():
         db.create_all()
-        if Employee.query.count() == 0:
-            log.info("Seeding employees from synthetic_data.json...")
-            Employee.seed_from_json(SYNTHETIC_DATA_PATH)
-            log.info("Employees seeded.")
+        log.info("Syncing employee data from synthetic_data.json...")
+        Employee.seed_from_json(SYNTHETIC_DATA_PATH)
+        log.info("Employee data synced.")
 
         # Auto-run pipeline if no analysis data exists (safety net)
         has_data = PipelineRun.query.filter_by(status='complete').first() is not None

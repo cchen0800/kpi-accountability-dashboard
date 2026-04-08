@@ -111,7 +111,17 @@ export default function Pipeline() {
   const hasAnyOutput = isGenerateDone || isExtractDone || isReasonDone
 
   return (
-    <div style={{ padding: '24px 28px 40px', maxWidth: 1200, margin: '0 auto' }}>
+    <div style={{
+      padding: '24px 28px 0',
+      width: '100%',
+      maxWidth: 1200,
+      margin: '0 auto',
+      display: 'flex',
+      flexDirection: 'column',
+      flex: 1,
+      minHeight: 0,
+      height: 'calc(100vh - 48px)',
+    }}>
       {/* Pipeline control (stage cards) */}
       <PipelineControl onComplete={loadOutputs} onReset={() => {
         setGenerateOutput(null)
@@ -122,7 +132,10 @@ export default function Pipeline() {
 
       {/* Output panel with tab bar */}
       {hasAnyOutput && (
-        <div className="card animate-in" style={{ marginTop: 24, animationDelay: '0.1s', padding: 0, overflow: 'hidden' }}>
+        <div className="card animate-in" style={{
+          marginTop: 24, animationDelay: '0.1s', padding: 0,
+          flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        }}>
           {/* Tab bar */}
           <div style={{
             display: 'flex',
@@ -179,7 +192,7 @@ export default function Pipeline() {
           </div>
 
           {/* Tab content */}
-          <div style={{ padding: '18px 20px', overflow: 'hidden', height: 340 }}>
+          <div style={{ padding: '18px 20px', flex: 1, minHeight: 0, overflowY: 'auto' }}>
             <AnimatePresence mode="wait" initial={false} custom={direction}>
             <motion.div
               key={activeTab}
@@ -193,7 +206,6 @@ export default function Pipeline() {
               animate="animate"
               exit="exit"
               transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-              style={{ height: '100%', overflowY: 'auto' }}
             >
             {/* Generate panel */}
             {activeTab === 'generate' && generateOutput && (
@@ -438,8 +450,10 @@ export default function Pipeline() {
       {lastRun?.has_run && (
         <div className="animate-in" style={{
           animationDelay: '0.3s',
-          marginTop: 24,
+          marginTop: 16,
+          marginBottom: 12,
           padding: '12px 16px',
+          flexShrink: 0,
           background: 'var(--bg-raised)',
           border: '1px solid var(--border-subtle)',
           borderRadius: 'var(--radius-sm)',

@@ -23,15 +23,17 @@ function Loading() {
 
 export default function App() {
   return (
-    <>
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <NavBar />
-      <Suspense fallback={<Loading />}>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/employees/:id" element={<EmployeeDetail />} />
-          <Route path="/pipeline" element={<Pipeline />} />
-        </Routes>
-      </Suspense>
-    </>
+      <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <Suspense fallback={<Loading />}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/employees/:id" element={<EmployeeDetail />} />
+            <Route path="/pipeline" element={<Pipeline />} />
+          </Routes>
+        </Suspense>
+      </div>
+    </div>
   )
 }

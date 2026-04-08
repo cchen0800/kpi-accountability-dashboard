@@ -1,10 +1,10 @@
 const DAY_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
 const DAY_DATES = {
-  monday: 'Mon, Mar 31',
-  tuesday: 'Tue, Apr 1',
-  wednesday: 'Wed, Apr 2',
-  thursday: 'Thu, Apr 3',
-  friday: 'Fri, Apr 4',
+  monday: 'Mon, Apr 6',
+  tuesday: 'Tue, Apr 7',
+  wednesday: 'Wed, Apr 8',
+  thursday: 'Thu, Apr 9',
+  friday: 'Fri, Apr 10',
 }
 
 const AVATAR_COLORS = {

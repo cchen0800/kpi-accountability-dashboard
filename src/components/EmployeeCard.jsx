@@ -1,15 +1,7 @@
 import { useNavigate } from 'react-router-dom'
+import { FLAG_STYLES, DEPARTMENTS } from '../lib/flags'
 
-const FLAG_STYLES = {
-  none: { color: 'var(--success)', bg: 'var(--success-dim)', label: 'On Track' },
-  optimism_gap: { color: 'var(--warning)', bg: 'var(--warning-dim)', label: 'Optimism Gap' },
-  submission_gap: { color: 'var(--danger)', bg: 'var(--danger-dim)', label: 'Submission Gap' },
-  vanity_metrics: { color: 'var(--purple)', bg: 'var(--purple-dim)', label: 'Vanity Metrics' },
-  no_progress: { color: 'var(--danger)', bg: 'var(--danger-dim)', label: 'No Progress' },
-  other: { color: 'var(--teal)', bg: 'var(--teal-dim)', label: 'Flagged' },
-}
-
-export default function EmployeeCard({ employee, index }) {
+export default function EmployeeCard({ employee, index, priorityRank }) {
   const navigate = useNavigate()
   const analysis = employee.analysis
   const kpis = employee.kpi_extractions || []
@@ -35,12 +27,27 @@ export default function EmployeeCard({ employee, index }) {
       }} />
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginTop: 4 }}>
-        <div>
-          <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.2px' }}>
-            {employee.name}
-          </div>
-          <div style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500, marginTop: 2 }}>
-            {employee.role}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          {priorityRank && (
+            <div style={{
+              width: 24, height: 24, borderRadius: '50%',
+              background: flagStyle.color, color: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 11, fontWeight: 800, flexShrink: 0, marginTop: 1,
+            }}>
+              {priorityRank}
+            </div>
+          )}
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, letterSpacing: '-0.2px' }}>
+              {employee.name}
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500, marginTop: 2 }}>
+              {employee.role}
+            </div>
+            <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500, marginTop: 1 }}>
+              {DEPARTMENTS[employee.role] || employee.department || ''}
+            </div>
           </div>
         </div>
         <span className="badge" style={{
@@ -121,19 +128,19 @@ export default function EmployeeCard({ employee, index }) {
           {analysis.recommended_action && (
             <div style={{
               marginTop: 12,
-              padding: '8px 12px',
-              background: 'var(--accent-glow)',
+              padding: '10px 14px',
+              background: flagType !== 'none' ? `${flagStyle.color}08` : 'var(--accent-glow)',
               borderRadius: 'var(--radius-sm)',
-              borderLeft: '3px solid var(--accent)',
+              borderLeft: `3px solid ${flagType !== 'none' ? flagStyle.color : 'var(--accent)'}`,
             }}>
               <span style={{
                 fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-                letterSpacing: '0.8px', color: 'var(--accent)',
+                letterSpacing: '0.8px', color: flagType !== 'none' ? flagStyle.color : 'var(--accent)',
               }}>
-                Action
+                Recommended Action
               </span>
               <div style={{
-                fontSize: 12, color: 'var(--text-secondary)', fontWeight: 500, fontStyle: 'italic', marginTop: 2,
+                fontSize: 13, color: 'var(--text)', fontWeight: 600, marginTop: 4, lineHeight: 1.45,
               }}>
                 {analysis.recommended_action}
               </div>

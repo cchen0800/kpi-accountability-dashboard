@@ -20,7 +20,7 @@ MODEL_PRICING = {
 client = OpenAI(api_key=OPENAI_API_KEY)
 
 
-def call_gpt(system_prompt, user_prompt):
+def call_gpt(system_prompt, user_prompt, temperature=0.7):
     """Call GPT and return parsed JSON response + usage stats."""
     response = client.chat.completions.create(
         model=OPENAI_MODEL,
@@ -29,7 +29,7 @@ def call_gpt(system_prompt, user_prompt):
             {"role": "user", "content": user_prompt},
         ],
         response_format={"type": "json_object"},
-        temperature=0.7,
+        temperature=temperature,
     )
 
     message = response.choices[0].message.content

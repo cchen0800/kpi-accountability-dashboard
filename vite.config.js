@@ -18,6 +18,7 @@ export default defineConfig({
     __BUILD_DATE__: JSON.stringify(buildDate),
   },
   server: {
+    port: 3000,
     proxy: {
       '/api': 'http://localhost:5000',
     },

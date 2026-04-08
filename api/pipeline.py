@@ -17,7 +17,7 @@ from config import OPENAI_MODEL
 
 log = logging.getLogger(__name__)
 
-BRANDS = "Unilever, Adidas, L'Oréal, Crocs, Nestlé"
+FICTIONAL_BRANDS = "Northwind Athletics, Petalcrest Beauty, Harborline Foods, Ridgeway Outdoors, Cinderhouse Coffee"
 
 
 def run_pipeline(app):
@@ -307,22 +307,43 @@ def _clear_previous_data(current_run_id):
 
 
 def _generate_updates(emp):
-    """Stage 1: Generate 5 daily standup updates for an employee."""
+    """Stage 1: Generate daily standup updates for an employee."""
     system = (
-        "You are generating realistic daily end-of-day Slack standup updates. "
-        "Return valid JSON with an 'updates' array of objects, each with 'day' and 'content' keys."
+        "You are writing casual Slack messages for a fictional company's #daily-standup channel.\n\n"
+        "FORMATTING RULES (non-negotiable):\n"
+        "- Plain text ONLY. No markdown. No **bold**, no ## headers, no [links](url), no ```code```.\n"
+        "- Do NOT use emojis as section headers or bullet prefixes (no '✅ Topic:', no '🚧 Topic:').\n"
+        "- Emojis are fine sprinkled naturally mid-sentence, just not as structural formatting.\n"
+        "- No bullet points. No numbered lists. Write in flowing sentences/short paragraphs.\n"
+        "- 1-4 sentences per update for most people. Match the stated writing style for length/tone "
+        "but OVERRIDE any formatting instructions in the writing style — plain text always wins.\n\n"
+        "BRAND RULES (non-negotiable):\n"
+        "- The ONLY client brand names that exist in this fictional universe are: "
+        "Northwind Athletics, Petalcrest Beauty, Harborline Foods, Ridgeway Outdoors, Cinderhouse Coffee.\n"
+        "- Do NOT use any real-world company names. No Unilever, no Adidas, no Crocs, no Nike, "
+        "no L'Oréal, no Nestlé, no Social Native. These do not exist in this world.\n"
+        "- If the writing style or KPIs mention real brands, ignore those brand names and substitute "
+        "from the fictional list above.\n\n"
+        "SUBMISSION RULES:\n"
+        "- The number of updates MUST equal the number of days the employee actually submits.\n"
+        "- If the hidden truth says they skip certain days, return FEWER than 5 updates.\n"
+        "- Only include days they actually post.\n\n"
+        "Return valid JSON: {\"updates\": [{\"day\": \"monday\", \"content\": \"...\"}]}"
     )
     user = (
-        f"Generate 5 daily standup updates (Monday through Friday) for {emp.name}, "
+        f"Generate daily standup Slack messages for {emp.name}, "
         f"a {emp.role} at Lumen Collective (Series C UGC marketplace, 180 employees).\n\n"
         f"Writing style: {emp.writing_style}\n"
         f"KPIs: {emp.kpis}\n"
         f"Hidden truth to embed subtly: {emp.hidden_truth}\n\n"
         f"Each update should:\n"
+        f"- Sound like a real Slack message, not a report\n"
         f"- Match the writing style exactly\n"
-        f"- Reference these brand clients naturally: {BRANDS}\n"
+        f"- Reference fictional brand clients naturally (listed in system prompt)\n"
         f"- Embed the hidden truth subtly — don't make it obvious\n"
         f"- Include realistic metrics that trend according to the hidden truth\n\n"
+        f"IMPORTANT: If the hidden truth says the employee skips certain days, "
+        f"do NOT generate updates for those days. Return ONLY the days they actually post.\n\n"
         f"Return JSON: {{\"updates\": [{{\"day\": \"monday\", \"content\": \"...\"}}]}}"
     )
     return call_gpt(system, user)
@@ -331,23 +352,35 @@ def _generate_updates(emp):
 def _extract_kpis(emp, updates):
     """Stage 2: Extract structured KPI data. Does NOT receive hidden_truth."""
     updates_text = "\n\n".join(
-        f"**{u.get('day', 'unknown').title()}**: {u.get('content', '')}" for u in updates
+        f"{u.get('day', 'unknown').title()}: {u.get('content', '')}" for u in updates
     )
     system = (
         "You are a data extraction agent. Parse daily standup updates and extract "
         "structured KPI performance data. Do not interpret or judge — just extract. "
-        "Return valid JSON."
+        "Return valid JSON.\n\n"
+        "IMPORTANT FORMATTING RULES:\n"
+        "- 'target', 'actual', and 'delta' must each be a SHORT string — a single number or "
+        "brief phrase. Examples: '25/week', '30', '+5', '-2', '3.2x', '85%'.\n"
+        "- Do NOT list per-day breakdowns in these fields. Summarize into one weekly figure.\n"
+        "- For 'actual': use the weekly total, weekly average, or latest value — whichever "
+        "matches how the target is expressed.\n"
+        "- For 'delta': the difference between actual and target as a single number (e.g. '+5', '-20%').\n\n"
+        "SUBMISSION COUNTING:\n"
+        "- Count exactly which days (Monday through Friday) have an update present.\n"
+        "- If only 3 out of 5 days have an update, submission_rate must be '3/5'.\n"
+        "- Do not assume missing days were submitted."
     )
     user = (
         f"Employee: {emp.name} ({emp.role})\n"
         f"KPI targets: {emp.kpis}\n\n"
-        f"Updates:\n{updates_text}\n\n"
+        f"Updates provided:\n{updates_text}\n\n"
         f"Extract:\n"
-        f"1. For each KPI: what metric values can you find in the updates? Compare to target.\n"
-        f"2. Submission compliance: which days (Mon-Fri) have an update, which are missing?\n\n"
+        f"1. For each KPI: find the best single summary value from the updates and compare to target.\n"
+        f"2. Submission compliance: count exactly which days (Mon-Fri) have an update above. "
+        f"If a day is not listed, it is MISSING — the employee did not submit that day.\n\n"
         f"Return JSON:\n"
         f"{{\n"
-        f"  \"kpis\": [{{\"name\": \"...\", \"target\": \"...\", \"actual\": \"...\", \"delta\": \"...\", \"status\": \"on_track|at_risk|missing\"}}],\n"
+        f"  \"kpis\": [{{\"name\": \"short KPI name\", \"target\": \"single value\", \"actual\": \"single value\", \"delta\": \"+/- single value\", \"status\": \"on_track|at_risk|missing\"}}],\n"
         f"  \"submission_rate\": \"X/5\",\n"
         f"  \"days_submitted\": [\"monday\", \"tuesday\", ...]\n"
         f"}}"
@@ -358,34 +391,51 @@ def _extract_kpis(emp, updates):
 def _reason_accountability(emp, extraction, updates):
     """Stage 3: Reason over extracted data. Does NOT receive hidden_truth."""
     updates_text = "\n\n".join(
-        f"**{u.get('day', 'unknown').title()}**: {u.get('content', '')}" for u in updates
+        f"{u.get('day', 'unknown').title()}: {u.get('content', '')}" for u in updates
     )
     kpi_summary = json.dumps(extraction.get('kpis', []), indent=2)
     submission_rate = extraction.get('submission_rate', 'unknown')
 
     system = (
-        "You are an AI operations analyst. Reason about what extracted KPI data "
-        "reveals about an employee's performance and accountability. "
-        "Return valid JSON."
+        "You are an AI operations analyst advising a CEO. Your job is to classify "
+        "exactly ONE accountability flag for this employee using the ordered rules below. "
+        "Check each rule IN ORDER and assign the FIRST one that matches. Return valid JSON.\n\n"
+        "CLASSIFICATION RULES (check in this exact order):\n"
+        "1. submission_gap — The employee submitted fewer than 5/5 daily updates, OR there are "
+        "multi-day gaps in their submission cadence. CHECK THIS FIRST by looking at submission_rate.\n"
+        "2. vanity_metrics — Activity/effort metrics (calls made, emails sent, tasks completed) "
+        "look strong, BUT outcome metrics (revenue, meetings booked, deals closed) are declining "
+        "or flat. The employee emphasizes activity to mask poor outcomes.\n"
+        "3. no_progress — The same blocker, task, or issue is repeated across 3+ days with no "
+        "escalation, resolution, or meaningful forward movement. The employee is stuck.\n"
+        "4. optimism_gap — The employee uses consistently positive/optimistic language ('feeling good,' "
+        "'great call,' 'almost there') but the underlying metrics are declining, stalled, or absent.\n"
+        "5. none — The employee is genuinely on track. Metrics meet or exceed targets, submissions "
+        "are consistent, and there are no red flags.\n\n"
+        "You MUST pick exactly one. Do NOT default to optimism_gap — only use it if the other "
+        "flags above genuinely do not apply."
     )
     user = (
         f"Employee: {emp.name} ({emp.role})\n"
         f"Extracted KPI data: {kpi_summary}\n"
         f"Submission rate: {submission_rate}\n\n"
         f"Raw updates (for context):\n{updates_text}\n\n"
-        f"Look for patterns like:\n"
-        f"- Optimistic language masking declining metrics\n"
-        f"- High activity metrics but declining outcome metrics\n"
-        f"- Repeated blockers without escalation\n"
-        f"- Irregular submission cadence\n"
-        f"- Any other accountability gap you observe\n\n"
+        f"ANALYSIS STEPS (you must do each one):\n"
+        f"Step 1: Check submission_rate. Is it less than 5/5? Are any weekdays missing? "
+        f"If yes → submission_gap.\n"
+        f"Step 2: Compare activity metrics vs outcome metrics. Are activity numbers strong but "
+        f"outcomes declining day-over-day? If yes → vanity_metrics.\n"
+        f"Step 3: Is the same blocker or task mentioned 3+ days without resolution or escalation? "
+        f"If yes → no_progress.\n"
+        f"Step 4: Is the language positive but metrics declining/stalled/absent? If yes → optimism_gap.\n"
+        f"Step 5: If none of the above apply → none.\n\n"
         f"Return JSON:\n"
         f"{{\n"
-        f"  \"flag_type\": \"none|optimism_gap|submission_gap|vanity_metrics|no_progress|other\",\n"
-        f"  \"flag_label\": \"Human-readable label (required if flag_type is 'other')\",\n"
+        f"  \"flag_type\": \"none|optimism_gap|submission_gap|vanity_metrics|no_progress\",\n"
+        f"  \"flag_label\": \"Human-readable label\",\n"
         f"  \"summary\": \"2-line summary for dashboard card\",\n"
-        f"  \"detail\": \"3-5 paragraph analysis with evidence from the data\",\n"
-        f"  \"recommended_action\": \"One specific CEO-level next step\"\n"
+        f"  \"detail\": \"3-5 paragraph analysis with specific evidence from the data\",\n"
+        f"  \"recommended_action\": \"One specific action the CEO should take THIS WEEK (e.g., 'Pull Sean into a 1:1 Monday to discuss daily submission commitment' — not vague advice)\"\n"
         f"}}"
     )
-    return call_gpt(system, user)
+    return call_gpt(system, user, temperature=0.3)

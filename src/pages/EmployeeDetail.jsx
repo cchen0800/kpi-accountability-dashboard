@@ -1,19 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { fetchEmployee } from '../lib/api/employees'
+import { FLAG_STYLES } from '../lib/flags'
 import KpiTable from '../components/KpiTable'
 import SubmissionCalendar from '../components/SubmissionCalendar'
 import AnalysisDetail from '../components/AnalysisDetail'
 import SlackFeed from '../components/SlackFeed'
-
-const FLAG_STYLES = {
-  none: { color: 'var(--success)', bg: 'var(--success-dim)', label: 'On Track' },
-  optimism_gap: { color: 'var(--warning)', bg: 'var(--warning-dim)', label: 'Optimism Gap' },
-  submission_gap: { color: 'var(--danger)', bg: 'var(--danger-dim)', label: 'Submission Gap' },
-  vanity_metrics: { color: 'var(--purple)', bg: 'var(--purple-dim)', label: 'Vanity Metrics' },
-  no_progress: { color: 'var(--danger)', bg: 'var(--danger-dim)', label: 'No Progress' },
-  other: { color: 'var(--teal)', bg: 'var(--teal-dim)', label: 'Flagged' },
-}
+import DualChart from '../components/DualChart'
 
 export default function EmployeeDetail() {
   const { id } = useParams()
@@ -113,6 +106,7 @@ export default function EmployeeDetail() {
       <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 16 }}>
         {/* Left column */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <DualChart updates={employee.updates} kpis={employee.kpi_extractions} />
           <KpiTable kpis={employee.kpi_extractions} />
           <AnalysisDetail analysis={analysis} />
         </div>

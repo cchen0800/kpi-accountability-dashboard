@@ -61,6 +61,12 @@ button, a, [role="button"], select, label[for], summary { cursor: pointer; }
 
 html { height: 100%; }
 
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 body {
   font-family: var(--font);
   background: var(--bg);

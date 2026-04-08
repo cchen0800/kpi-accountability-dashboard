@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAtom } from 'jotai'
 import { employeesAtom } from '../lib/store/employees'
 import { lastRunAtom } from '../lib/store/pipeline'
 import { fetchEmployees, fetchAllUpdates } from '../lib/api/employees'
 import { fetchLastRun } from '../lib/api/pipeline'
+import { sortBySeverity, FLAG_STYLES } from '../lib/flags'
 import EmployeeCard from '../components/EmployeeCard'
 import SlackFeed from '../components/SlackFeed'
 import TeamRollup from '../components/TeamRollup'
@@ -31,6 +32,23 @@ export default function Dashboard() {
   }, [setEmployees, setLastRun])
 
   useEffect(() => { loadData() }, [loadData])
+
+  const sorted = useMemo(() => sortBySeverity(employees), [employees])
+
+  const headline = useMemo(() => {
+    const hasAnalysis = employees.some(e => e.analysis)
+    if (!hasAnalysis || employees.length === 0) return null
+
+    const flagged = sorted.filter(e => e.analysis?.flag_type && e.analysis.flag_type !== 'none')
+    if (flagged.length === 0) return 'All team members are on track this week.'
+
+    const topNames = flagged.slice(0, 2).map(e => {
+      const style = FLAG_STYLES[e.analysis.flag_type] || {}
+      return `${e.name} (${(style.label || e.analysis.flag_type).toLowerCase()})`
+    })
+    const rest = flagged.length > 2 ? ` and ${flagged.length - 2} more` : ''
+    return `${flagged.length} of ${employees.length} team members need attention this week. Highest priority: ${topNames.join(' and ')}${rest}.`
+  }, [employees, sorted])
 
   return (
     <>
@@ -161,6 +179,23 @@ export default function Dashboard() {
           )}
         </div>
 
+        {/* Executive headline */}
+        {!loading && headline && (
+          <div className="animate-in" style={{
+            padding: '14px 18px',
+            background: 'var(--bg-raised)',
+            border: '1px solid var(--border)',
+            borderRadius: 'var(--radius-sm)',
+            fontSize: 14,
+            fontWeight: 600,
+            color: 'var(--text-secondary)',
+            lineHeight: 1.5,
+            marginBottom: 0,
+          }}>
+            {headline}
+          </div>
+        )}
+
         {/* Team rollup */}
         {!loading && <TeamRollup employees={employees} />}
 
@@ -185,9 +220,20 @@ export default function Dashboard() {
               gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
               gap: 14,
             }}>
-              {employees.map((emp, i) => (
-                <EmployeeCard key={emp.id} employee={emp} index={i} />
-              ))}
+              {sorted.map((emp, i) => {
+                const flagType = emp.analysis?.flag_type || 'none'
+                const flaggedIndex = flagType !== 'none'
+                  ? sorted.filter(e => e.analysis?.flag_type && e.analysis.flag_type !== 'none').indexOf(emp)
+                  : -1
+                return (
+                  <EmployeeCard
+                    key={emp.id}
+                    employee={emp}
+                    index={i}
+                    priorityRank={flaggedIndex >= 0 ? flaggedIndex + 1 : null}
+                  />
+                )
+              })}
             </div>
           )}
         </div>
