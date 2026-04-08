@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
 import { useAtom } from 'jotai'
 import { pipelineStatusAtom, lastRunAtom } from '../lib/store/pipeline'
 import { employeesAtom } from '../lib/store/employees'
@@ -155,38 +155,9 @@ export default function PipelineControl({ onComplete, onReset }) {
             Three independent GPT agents process data sequentially - each stage unlocks the next
           </div>
         </div>
-        {!isRunning && status.status !== 'idle' && (
-          <button
-            onClick={async () => {
-              try { await resetPipeline() } catch {}
-              setStatus({ status: 'idle', stage: null, error: null })
-              setLastRun(null)
-              setEmployees([])
-              if (onReset) onReset()
-            }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderRadius: 'var(--radius-sm)',
-              padding: '6px 12px',
-              fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)',
-              fontFamily: 'var(--font)', cursor: 'pointer',
-              transition: 'all 0.2s ease', flexShrink: 0,
-            }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--danger)'; e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.background = 'var(--danger-dim)' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.background = 'var(--bg)' }}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polyline points="1 4 1 10 7 10" /><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-            </svg>
-            Start Over
-          </button>
-        )}
       </div>
 
-      {/* Three stage cards */}
-      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr auto 1fr', gap: 0, alignItems: 'stretch' }}>
         {STAGES.map((stage, i) => {
           const state = getStageState(i, status.status)
           const isActive = state === 'running'
@@ -194,148 +165,163 @@ export default function PipelineControl({ onComplete, onReset }) {
           const isReady = state === 'ready'
           const isLocked = state === 'locked'
 
+          const prevDone = i > 0 && (() => {
+            const prevState = getStageState(i - 1, status.status)
+            return prevState === 'done'
+          })()
+
           return (
-            <div
-              key={stage.key}
-              className="animate-in"
-              style={{
-                animationDelay: `${0.15 + i * 0.08}s`,
-                padding: '16px 16px 20px',
-                borderRadius: 'var(--radius-sm)',
-                border: `1px solid ${isActive ? 'var(--accent)' : isDone ? 'var(--success)' : 'var(--border)'}`,
-                background: isActive ? 'var(--accent-glow)' : isDone ? 'rgba(5, 150, 105, 0.04)' : 'var(--bg)',
-                opacity: isLocked ? 0.5 : 1,
-                transition: 'all 0.3s ease',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 10,
-              }}
-            >
-              {/* Stage number + icon */}
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: '50%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 12, fontWeight: 700,
-                    background: isDone ? 'var(--success)' : isActive ? 'var(--accent)' : 'var(--bg-raised)',
-                    color: isDone || isActive ? '#fff' : 'var(--text-tertiary)',
-                    border: isDone || isActive ? 'none' : '1px solid var(--border)',
-                    transition: 'all 0.3s ease',
-                  }}>
-                    {isDone ? (
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    ) : (
-                      i + 1
-                    )}
-                  </div>
-                  <span style={{
-                    fontSize: 13, fontWeight: 700,
-                    color: isDone ? 'var(--success)' : isActive ? 'var(--accent)' : 'var(--text)',
-                  }}>
-                    {stage.label}
-                  </span>
-                  {stage.estimate && !isDone && (
-                    <span className="mono" style={{
-                      fontSize: 11, fontWeight: 700,
-                      color: 'var(--text-tertiary)',
-                    }}>
-                      {stage.estimate}
-                    </span>
-                  )}
+            <React.Fragment key={stage.key}>
+              {i > 0 && (
+                <div
+                  className={`pipeline-connector${prevDone ? ' active' : ''}`}
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14" />
+                    <path d="M12 5l7 7-7 7" />
+                  </svg>
                 </div>
-                <div style={{
-                  color: isDone ? 'var(--success)' : isActive ? 'var(--accent)' : 'var(--text-ghost)',
-                  transition: 'color 0.3s ease',
-                }}>
-                  {stage.icon}
-                </div>
-              </div>
+              )}
 
-              {/* Description */}
-              <div style={{
-                fontSize: 11.5,
-                color: 'var(--text-tertiary)',
-                fontWeight: 500,
-                lineHeight: 1.5,
-                flex: 1,
-              }}>
-                {stage.description}
-              </div>
-
-              {/* Action button */}
-              <button
-                className={isReady && glowStage === stage.key ? 'glow-btn' : undefined}
-                onClick={() => { setGlowStage(null); handleRunStage(stage.key) }}
-                disabled={!isReady || isRunning}
+              <div
+                className="animate-in"
                 style={{
-                  width: '100%',
-                  padding: '8px 0',
+                  animationDelay: `${0.15 + i * 0.08}s`,
+                  padding: '16px 16px 20px',
                   borderRadius: 'var(--radius-sm)',
-                  border: 'none',
-                  fontSize: 12,
-                  fontWeight: 600,
-                  fontFamily: 'var(--font)',
-                  cursor: isReady && !isRunning ? 'pointer' : 'not-allowed',
-                  transition: 'all 0.2s ease',
+                  border: `1px solid ${isActive ? 'var(--accent)' : isDone ? 'var(--success)' : 'var(--border)'}`,
+                  background: isActive ? 'var(--accent-glow)' : isDone ? 'rgba(5, 150, 105, 0.04)' : 'var(--bg)',
+                  opacity: isLocked ? 0.5 : 1,
+                  transition: 'all 0.3s ease',
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
-                  ...(isActive ? {
-                    background: 'var(--accent)',
-                    color: '#fff',
-                    opacity: 0.8,
-                  } : isDone ? {
-                    background: 'rgba(5, 150, 105, 0.1)',
-                    color: 'var(--success)',
-                  } : isReady ? {
-                    background: 'var(--accent)',
-                    color: '#fff',
-                  } : {
-                    background: 'var(--bg-raised)',
-                    color: 'var(--text-ghost)',
-                  }),
+                  flexDirection: 'column',
+                  gap: 10,
                 }}
               >
-                {isActive ? (
-                  <>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
-                      <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                    </svg>
-                    Processing...
-                  </>
-                ) : isDone ? (
-                  <>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                    Complete
-                  </>
-                ) : isReady ? (
-                  <>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="5 3 19 12 5 21 5 3" />
-                    </svg>
-                    Run
-                  </>
-                ) : (
-                  <>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                    </svg>
-                    Locked
-                  </>
-                )}
-              </button>
-            </div>
+                {/* Stage number + icon */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 12, fontWeight: 700,
+                      background: isDone ? 'var(--success)' : isActive ? 'var(--accent)' : 'var(--bg-raised)',
+                      color: isDone || isActive ? '#fff' : 'var(--text-tertiary)',
+                      border: isDone || isActive ? 'none' : '1px solid var(--border)',
+                      transition: 'all 0.3s ease',
+                    }}>
+                      {isDone ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      ) : (
+                        i + 1
+                      )}
+                    </div>
+                    <span style={{
+                      fontSize: 13, fontWeight: 700,
+                      color: isDone ? 'var(--success)' : isActive ? 'var(--accent)' : 'var(--text)',
+                    }}>
+                      {stage.label}
+                    </span>
+                    {stage.estimate && !isDone && (
+                      <span className="mono" style={{
+                        fontSize: 11, fontWeight: 700,
+                        color: 'var(--text-tertiary)',
+                      }}>
+                        {stage.estimate}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{
+                    color: isDone ? 'var(--success)' : isActive ? 'var(--accent)' : 'var(--text-ghost)',
+                    transition: 'color 0.3s ease',
+                  }}>
+                    {stage.icon}
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div style={{
+                  fontSize: 11.5,
+                  color: 'var(--text-tertiary)',
+                  fontWeight: 500,
+                  lineHeight: 1.5,
+                  flex: 1,
+                }}>
+                  {stage.description}
+                </div>
+
+                {/* Action button */}
+                <button
+                  className={isReady && glowStage === stage.key ? 'glow-btn' : undefined}
+                  onClick={() => { setGlowStage(null); handleRunStage(stage.key) }}
+                  disabled={!isReady || isRunning}
+                  style={{
+                    width: '100%',
+                    padding: '8px 0',
+                    borderRadius: 'var(--radius-sm)',
+                    border: 'none',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    fontFamily: 'var(--font)',
+                    cursor: isReady && !isRunning ? 'pointer' : 'not-allowed',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 6,
+                    ...(isActive ? {
+                      background: 'var(--accent)',
+                      color: '#fff',
+                      opacity: 0.8,
+                    } : isDone ? {
+                      background: 'rgba(5, 150, 105, 0.1)',
+                      color: 'var(--success)',
+                    } : isReady ? {
+                      background: 'var(--accent)',
+                      color: '#fff',
+                    } : {
+                      background: 'var(--bg-raised)',
+                      color: 'var(--text-ghost)',
+                    }),
+                  }}
+                >
+                  {isActive ? (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}>
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                      </svg>
+                      Processing...
+                    </>
+                  ) : isDone ? (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      Complete
+                    </>
+                  ) : isReady ? (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3" />
+                      </svg>
+                      Run
+                    </>
+                  ) : (
+                    <>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                      </svg>
+                      Locked
+                    </>
+                  )}
+                </button>
+              </div>
+            </React.Fragment>
           )
         })}
       </div>
-
-      {/* Connector arrows between stages */}
       {status.error && (
         <div style={{
           marginTop: 12,
