@@ -222,16 +222,16 @@ export default function Dashboard() {
         {/* Team rollup + visualizations row */}
         {!loading && (() => {
           const showViz = allUpdates.length > 0 && employees.some(e => e.analysis)
-          if (!showViz) return <div style={{ marginTop: 20 }}><TeamRollup employees={employees} /></div>
+          if (!showViz) return <div style={{ marginTop: 20 }}><TeamRollup employees={employees} allUpdates={allUpdates} /></div>
           return (
             <div className="mobile-stack" style={{
               display: 'grid',
-              gridTemplateColumns: '65fr 35fr',
+              gridTemplateColumns: '55fr 45fr',
               gap: 14,
               marginTop: 20,
               gridTemplateRows: '1fr',
             }}>
-              <TeamRollup employees={employees} />
+              <TeamRollup employees={employees} allUpdates={allUpdates} />
               <div style={{ minHeight: 0, overflow: 'hidden' }}>
                 <SentimentScatter employees={employees} allUpdates={allUpdates} />
               </div>

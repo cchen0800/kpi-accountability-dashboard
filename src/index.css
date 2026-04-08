@@ -111,12 +111,12 @@ body {
 }
 
 @keyframes glow-pulse {
-  0%, 100% { box-shadow: 0 0 12px rgba(74, 114, 245, 0.5), 0 0 28px rgba(74, 114, 245, 0.3), 0 0 44px rgba(74, 114, 245, 0.15); transform: scale(1); }
-  50% { box-shadow: 0 0 24px rgba(74, 114, 245, 0.8), 0 0 52px rgba(74, 114, 245, 0.5), 0 0 80px rgba(74, 114, 245, 0.25), 0 0 110px rgba(74, 114, 245, 0.1); transform: scale(1.02); }
+  0%, 100% { box-shadow: 0 0 6px rgba(74, 114, 245, 0.2), 0 0 14px rgba(74, 114, 245, 0.12); transform: scaleX(1) scaleY(1); }
+  50% { box-shadow: 0 0 10px rgba(74, 114, 245, 0.35), 0 0 22px rgba(74, 114, 245, 0.18), 0 0 36px rgba(74, 114, 245, 0.08); transform: scaleX(1.04) scaleY(1.08); }
 }
 
 .glow-btn {
-  animation: glow-pulse 1.4s ease-in-out infinite;
+  animation: glow-pulse 2s ease-in-out infinite;
 }
 
 .animate-in {

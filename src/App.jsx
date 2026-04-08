@@ -104,9 +104,9 @@ export default function App() {
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         <Suspense fallback={<Loading />}>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Pipeline />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/employees/:id" element={<EmployeeDetail />} />
-            <Route path="/pipeline" element={<Pipeline />} />
           </Routes>
         </Suspense>
       </div>

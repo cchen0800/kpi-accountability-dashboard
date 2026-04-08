@@ -23,14 +23,19 @@ export default function SubmissionHeatmap({ employees, allUpdates }) {
   const employeeList = employees || [];
 
   return (
-    <div className="card-elevated animate-in" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100%', boxSizing: 'border-box' }}>
-      <div className="section-header" style={{ marginBottom: 10, alignSelf: 'flex-start' }}>Submission Cadence</div>
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div style={{
+        fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+        letterSpacing: '0.8px', color: 'var(--text-ghost)',
+        marginBottom: 8,
+      }}>Submission Cadence</div>
       <div
         style={{
           display: 'inline-grid',
-          gridTemplateColumns: 'max-content repeat(5, 18px)',
-          gap: '4px 6px',
+          gridTemplateColumns: 'max-content repeat(5, 1fr)',
+          gap: '8px 5px',
           alignItems: 'center',
+          width: '75%',
         }}
       >
         {/* Header row */}
@@ -40,10 +45,10 @@ export default function SubmissionHeatmap({ employees, allUpdates }) {
             key={d.key}
             style={{
               fontSize: 9,
+              fontWeight: 600,
               textTransform: 'uppercase',
               color: 'var(--text-ghost)',
               textAlign: 'center',
-              lineHeight: '18px',
               letterSpacing: '0.3px',
             }}
           >
@@ -59,14 +64,14 @@ export default function SubmissionHeatmap({ employees, allUpdates }) {
             <div
               key={`name-${emp.id}`}
               style={{
-                fontSize: 11,
-                fontWeight: 600,
+                fontSize: 12,
+                fontWeight: 700,
                 color: 'var(--text)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 maxWidth: 80,
-                lineHeight: '18px',
+                paddingRight: 8,
               }}
             >
               {firstName}
@@ -77,14 +82,10 @@ export default function SubmissionHeatmap({ employees, allUpdates }) {
                 <div
                   key={`${emp.id}-${d.key}`}
                   style={{
-                    width: 18,
-                    height: 18,
-                    borderRadius: 3,
-                    background: hasUpdate ? 'var(--success)' : 'transparent',
-                    border: hasUpdate
-                      ? 'none'
-                      : '1.5px dashed var(--border)',
-                    boxSizing: 'border-box',
+                    height: 8,
+                    borderRadius: 4,
+                    background: hasUpdate ? 'var(--success)' : 'var(--border)',
+                    opacity: hasUpdate ? 0.8 : 0.2,
                   }}
                 />
               );

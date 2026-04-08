@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
+import SubmissionHeatmap from './SubmissionHeatmap'
 
 const FLAG_CONFIG = {
   none: {
@@ -55,14 +56,14 @@ function getBiggestGaps(employees) {
       if (!kpi.delta || kpi.delta === '-') continue
       const num = parseFloat(kpi.delta)
       if (isNaN(num) || num >= 0) continue
-      gaps.push({ name: emp.name, kpiName: kpi.kpi_name, delta: kpi.delta, numDelta: num })
+      gaps.push({ name: emp.name, kpiName: kpi.kpi_name, target: kpi.target, delta: kpi.delta, numDelta: num })
     }
   }
   gaps.sort((a, b) => a.numDelta - b.numDelta)
   return gaps.slice(0, 3)
 }
 
-export default function TeamRollup({ employees }) {
+export default function TeamRollup({ employees, allUpdates }) {
   const [guideOpen, setGuideOpen] = useState(false)
   if (!employees || employees.length === 0) return null
 
@@ -237,37 +238,51 @@ export default function TeamRollup({ employees }) {
         </div>
       </div>
 
-      {/* Biggest Gaps mini-list */}
-      {biggestGaps.length > 0 && (
-        <div style={{ marginTop: 16 }}>
-          <div style={{
-            fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-            letterSpacing: '0.8px', color: 'var(--text-ghost)',
-            marginBottom: 8,
-          }}>
-            Biggest Gaps
-          </div>
-          {biggestGaps.map((gap, i) => (
-            <div key={i} style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              padding: '5px 0',
-              borderBottom: i < biggestGaps.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+      {/* Biggest Gaps + Submission Heatmap side by side */}
+      <div className="mobile-stack" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 40, marginTop: 16 }}>
+        {/* Biggest Gaps */}
+        {biggestGaps.length > 0 && (
+          <div>
+            <div style={{
+              fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+              letterSpacing: '0.8px', color: 'var(--text-ghost)',
+              marginBottom: 8,
             }}>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, minWidth: 0 }}>
-                <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
-                  {gap.name}
-                </span>
-                <span style={{ fontSize: 11, color: 'var(--text-tertiary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {gap.kpiName}
-                </span>
-              </div>
-              <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: 'var(--danger)', flexShrink: 0, marginLeft: 8 }}>
-                {gap.delta}
-              </span>
+              Biggest Gaps
             </div>
-          ))}
-        </div>
-      )}
+            {biggestGaps.map((gap, i) => (
+              <div key={i} style={{
+                padding: '7px 0',
+                borderBottom: i < biggestGaps.length - 1 ? '1px solid var(--border-subtle)' : 'none',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text)' }}>
+                    {gap.name}
+                  </span>
+                  <span className="mono" style={{ fontSize: 13, fontWeight: 700, color: 'var(--danger)' }}>
+                    {gap.delta}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 1 }}>
+                  <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>
+                    {gap.kpiName}
+                  </span>
+                  {gap.target && (
+                    <span className="mono" style={{ fontSize: 10, color: 'var(--text-ghost)' }}>
+                      target: {gap.target}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Submission Heatmap */}
+        {allUpdates && allUpdates.length > 0 && (
+          <SubmissionHeatmap employees={employees} allUpdates={allUpdates} />
+        )}
+      </div>
 
       {/* Compact flag legend row */}
       <div style={{

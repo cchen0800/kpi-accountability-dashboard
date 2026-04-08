@@ -60,7 +60,7 @@ export default function EmployeeDetail() {
       {/* Back button */}
       <button
         className="animate-in"
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/dashboard')}
         style={{
           display: 'flex', alignItems: 'center', gap: 6,
           background: 'none', border: 'none', padding: 0,

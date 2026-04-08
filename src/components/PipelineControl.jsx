@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useAtom } from 'jotai'
 import { pipelineStatusAtom, lastRunAtom } from '../lib/store/pipeline'
 import { employeesAtom } from '../lib/store/employees'
@@ -78,8 +78,29 @@ export default function PipelineControl({ onComplete, onReset }) {
   const [, setLastRun] = useAtom(lastRunAtom)
   const [, setEmployees] = useAtom(employeesAtom)
   const pollRef = useRef(null)
+  const [glowStage, setGlowStage] = useState(null)
+  const glowTimerRef = useRef(null)
 
   const isRunning = ['pending', 'generating', 'extracting', 'reasoning'].includes(status.status)
+
+  // Glow the first ready stage button — immediately for idle, 10s delay after a stage completes
+  useEffect(() => {
+    if (glowTimerRef.current) { clearTimeout(glowTimerRef.current); glowTimerRef.current = null }
+
+    const s = status.status
+    if (s === 'idle') {
+      // First time user — glow stage 1 immediately
+      setGlowStage('generate')
+    } else if (s === 'stage_generate_done') {
+      setGlowStage('extract')
+    } else if (s === 'stage_extract_done') {
+      setGlowStage('reason')
+    } else {
+      setGlowStage(null)
+    }
+
+    return () => { if (glowTimerRef.current) clearTimeout(glowTimerRef.current) }
+  }, [status.status])
 
   const poll = useCallback(async () => {
     try {
@@ -179,7 +200,7 @@ export default function PipelineControl({ onComplete, onReset }) {
               className="animate-in"
               style={{
                 animationDelay: `${0.15 + i * 0.08}s`,
-                padding: '16px',
+                padding: '16px 16px 20px',
                 borderRadius: 'var(--radius-sm)',
                 border: `1px solid ${isActive ? 'var(--accent)' : isDone ? 'var(--success)' : 'var(--border)'}`,
                 background: isActive ? 'var(--accent-glow)' : isDone ? 'rgba(5, 150, 105, 0.04)' : 'var(--bg)',
@@ -218,8 +239,8 @@ export default function PipelineControl({ onComplete, onReset }) {
                   </span>
                   {stage.estimate && !isDone && (
                     <span className="mono" style={{
-                      fontSize: 10, fontWeight: 500,
-                      color: 'var(--text-ghost)',
+                      fontSize: 11, fontWeight: 700,
+                      color: 'var(--text-tertiary)',
                     }}>
                       {stage.estimate}
                     </span>
@@ -246,7 +267,8 @@ export default function PipelineControl({ onComplete, onReset }) {
 
               {/* Action button */}
               <button
-                onClick={() => handleRunStage(stage.key)}
+                className={isReady && glowStage === stage.key ? 'glow-btn' : undefined}
+                onClick={() => { setGlowStage(null); handleRunStage(stage.key) }}
                 disabled={!isReady || isRunning}
                 style={{
                   width: '100%',

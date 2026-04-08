@@ -4,8 +4,8 @@ import { useAtom } from 'jotai'
 import { lastRunAtom } from '../lib/store/pipeline'
 
 const NAV_ITEMS = [
-  { path: '/', label: 'KPI Accountability', shortLabel: 'Dashboard' },
-  { path: '/pipeline', label: 'Agentic Pipeline', shortLabel: 'Pipeline' },
+  { path: '/', label: 'Agentic Pipeline', shortLabel: 'Pipeline' },
+  { path: '/dashboard', label: 'CEO Dashboard', shortLabel: 'Dashboard' },
 ]
 
 export default function NavBar() {
@@ -57,7 +57,7 @@ export default function NavBar() {
           </svg>
         </div>
         <span className="nav-title" style={{ fontSize: 14, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.3px' }}>
-          KPI Accountability
+          Agentic Pipeline
         </span>
       </div>
 

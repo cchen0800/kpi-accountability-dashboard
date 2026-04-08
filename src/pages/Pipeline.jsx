@@ -275,16 +275,9 @@ export default function Pipeline() {
                   transition={{ duration: 0.3 }}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}
                 >
-                  <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500 }}>
+                  <div style={{ fontSize: 12, color: 'var(--text-secondary)', fontWeight: 700, fontStyle: 'italic' }}>
                     Sample: first standup from each employee
                   </div>
-                  <span style={{
-                    fontSize: 11, fontWeight: 600, color: 'var(--success)',
-                    background: 'var(--success-dim)', padding: '3px 10px',
-                    borderRadius: 20,
-                  }}>
-                    {generateOutput.employee_count} employees x 5 days = {generateOutput.total} standups
-                  </span>
                 </motion.div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {generateOutput.previews.map((msg, i) => (
@@ -490,7 +483,7 @@ export default function Pipeline() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3, delay: 0.1 + reasonOutput.previews.length * 0.06 }}
-                    onClick={() => navigate('/')}
+                    onClick={() => navigate('/dashboard')}
                     className="glow-btn"
                     style={{
                       marginTop: 24,
