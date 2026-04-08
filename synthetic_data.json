@@ -19,7 +19,7 @@
   "employees": [
     {
       "id": "emp_001",
-      "name": "Adam Cretti",
+      "name": "Adam Ankeny",
       "role": "Creator Operations Associate",
       "department": "Creator Ops",
       "manager": "VP of Operations",
@@ -32,7 +32,7 @@
     },
     {
       "id": "emp_002",
-      "name": "Avery Collard",
+      "name": "Avery Holmseth",
       "role": "Client Success Manager",
       "department": "Client Success",
       "manager": "Head of Client Success",
@@ -45,7 +45,7 @@
     },
     {
       "id": "emp_003",
-      "name": "Sean Kargman",
+      "name": "Sean Cretti",
       "role": "Performance Marketing Analyst",
       "department": "Performance Marketing",
       "manager": "CMO",
@@ -58,7 +58,7 @@
     },
     {
       "id": "emp_004",
-      "name": "Jeff Holmseth",
+      "name": "Jeff Collard",
       "role": "Sales Development Rep",
       "department": "Sales",
       "manager": "VP Sales",
@@ -71,7 +71,7 @@
     },
     {
       "id": "emp_005",
-      "name": "Hannah Ankeny",
+      "name": "Hannah Kargman",
       "role": "Product Manager",
       "department": "Product",
       "manager": "CPO",

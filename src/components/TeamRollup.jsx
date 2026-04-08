@@ -88,7 +88,7 @@ export default function TeamRollup({ employees }) {
   ].filter(s => s.count > 0)
 
   return (
-    <div className="card animate-in" style={{ animationDelay: '0.12s', marginTop: 20 }}>
+    <div className="card animate-in" style={{ animationDelay: '0.12s' }}>
       {/* Top row: KPI health summary cards */}
       <div style={{
         display: 'grid',

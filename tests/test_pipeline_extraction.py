@@ -45,7 +45,7 @@ def _make_employee(**kwargs):
 
 AVERY = _make_employee(
     id="emp_002",
-    name="Avery Collard",
+    name="Avery Holmseth",
     role="Client Success Manager",
     kpis=json.dumps([
         "Renew 4 enterprise accounts this quarter",
@@ -64,7 +64,7 @@ AVERY = _make_employee(
 
 HANNAH = _make_employee(
     id="emp_005",
-    name="Hannah Ankeny",
+    name="Hannah Kargman",
     role="Product Manager",
     kpis=json.dumps([
         "Ship Creator Matching v2 by end of quarter",
@@ -84,7 +84,7 @@ HANNAH = _make_employee(
 
 ADAM = _make_employee(
     id="emp_001",
-    name="Adam Cretti",
+    name="Adam Ankeny",
     role="Creator Operations Associate",
     kpis=json.dumps([
         "Onboard 25 new creators/week to the platform",

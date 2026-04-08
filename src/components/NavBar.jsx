@@ -1,4 +1,7 @@
+import { useState, useRef, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useAtom } from 'jotai'
+import { lastRunAtom } from '../lib/store/pipeline'
 
 const NAV_ITEMS = [
   { path: '/', label: 'Dashboard' },
@@ -8,6 +11,26 @@ const NAV_ITEMS = [
 export default function NavBar() {
   const location = useLocation()
   const navigate = useNavigate()
+  const [lastRun] = useAtom(lastRunAtom)
+  const [infoOpen, setInfoOpen] = useState(false)
+  const popoverRef = useRef(null)
+
+  useEffect(() => {
+    if (!infoOpen) return
+    const handler = (e) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
+        setInfoOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [infoOpen])
+
+  const stats = lastRun?.has_run ? [
+    { label: 'Tokens Used', value: lastRun.total_tokens?.toLocaleString() },
+    { label: 'Cost', value: `$${(lastRun.total_cost_cents / 100).toFixed(4)}` },
+    { label: 'Duration', value: lastRun.duration_seconds ? `${lastRun.duration_seconds.toFixed(1)}s` : '-' },
+  ] : null
 
   return (
     <nav style={{
@@ -67,6 +90,71 @@ export default function NavBar() {
           )
         })}
       </div>
+
+      {/* Info icon + popover */}
+      {stats && (
+        <div ref={popoverRef} style={{ position: 'absolute', right: 28 }}>
+          <button
+            onClick={() => setInfoOpen(o => !o)}
+            style={{
+              width: 30, height: 30, borderRadius: 'var(--radius-sm)',
+              border: '1px solid var(--border)',
+              background: infoOpen ? 'var(--accent-glow)' : 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              color: infoOpen ? 'var(--accent)' : 'var(--text-ghost)',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-active)'; e.currentTarget.style.color = 'var(--accent)' }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = infoOpen ? 'var(--accent)' : 'var(--text-ghost)' }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
+            </svg>
+          </button>
+
+          {infoOpen && (
+            <div style={{
+              position: 'absolute',
+              top: 38,
+              right: 0,
+              background: 'var(--card)',
+              border: '1px solid var(--border)',
+              borderRadius: 'var(--radius-sm)',
+              boxShadow: 'var(--shadow-elevated)',
+              padding: '14px 18px',
+              minWidth: 200,
+              zIndex: 50,
+              animation: 'fade-in 0.15s ease both',
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+                letterSpacing: '0.8px', color: 'var(--text-ghost)', marginBottom: 10,
+              }}>
+                Last Pipeline Run
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {stats.map(item => (
+                  <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      {item.label}
+                    </span>
+                    <span className="mono" style={{ fontSize: 12, fontWeight: 600, color: 'var(--text)' }}>
+                      {item.value || '-'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div style={{
+                marginTop: 10, paddingTop: 8, borderTop: '1px solid var(--border-subtle)',
+                fontSize: 10, color: 'var(--text-ghost)',
+              }}>
+                {new Date(lastRun.started_at).toLocaleString()}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </nav>
   )
 }

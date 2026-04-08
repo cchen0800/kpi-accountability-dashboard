@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAtom } from 'jotai'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -42,8 +42,6 @@ export default function Pipeline() {
   const [reasonOutput, setReasonOutput] = useState(null)
   const [activeTab, setActiveTab] = useState(null)
   const [direction, setDirection] = useState(0)
-  const [sessionRuns, setSessionRuns] = useState(0)
-  const lastRunIdRef = useRef(null)
   const [introExpanded, setIntroExpanded] = useState(true)
 
   const TAB_INDEX = { generate: 0, extract: 1, reason: 2 }
@@ -81,16 +79,6 @@ export default function Pipeline() {
   }, [isGenerateDone, isExtractDone, isReasonDone, generateOutput, extractOutput, reasonOutput, setLastRun])
 
   useEffect(() => { loadOutputs() }, [loadOutputs])
-
-  // Track session run count
-  useEffect(() => {
-    if (lastRun?.has_run && lastRun.id && lastRun.id !== lastRunIdRef.current) {
-      if (lastRunIdRef.current !== null) {
-        setSessionRuns(prev => prev + 1)
-      }
-      lastRunIdRef.current = lastRun.id
-    }
-  }, [lastRun])
 
   // Reset outputs when a new run starts
   useEffect(() => {
@@ -261,7 +249,7 @@ export default function Pipeline() {
           </div>
 
           {/* Tab content */}
-          <div style={{ padding: '18px 20px', flex: 1, minHeight: 0, overflowY: 'auto' }}>
+          <div style={{ padding: '18px 20px', flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
             <AnimatePresence mode="wait" initial={false} custom={direction}>
             <motion.div
               key={activeTab}
@@ -275,6 +263,7 @@ export default function Pipeline() {
               animate="animate"
               exit="exit"
               transition={{ duration: 0.12, ease: [0.4, 0, 0.2, 1] }}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column' }}
             >
             {/* Generate panel */}
             {activeTab === 'generate' && generateOutput && (
@@ -448,80 +437,71 @@ export default function Pipeline() {
 
             {/* Reason panel */}
             {activeTab === 'reason' && reasonOutput && (
-              <div>
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3 }}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}
-                >
-                  <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500 }}>
-                    Flags assigned independently by reasoning agent (hidden truth NOT provided)
-                  </div>
-                  <span style={{
-                    fontSize: 11, fontWeight: 600, color: 'var(--purple)',
-                    background: 'var(--purple-dim)', padding: '3px 10px',
-                    borderRadius: 20,
-                  }}>
-                    {reasonOutput.employee_count} employees analyzed
-                  </span>
-                </motion.div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, minHeight: 0 }}>
+                <div style={{ maxWidth: 400, width: '100%' }}>
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ textAlign: 'center', marginBottom: 16 }}
+                  >
+                    <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.2px' }}>
+                      Accountability Flags
+                    </div>
+                    <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500, marginTop: 4 }}>
+                      {reasonOutput.employee_count} employees analyzed independently by reasoning agent
+                    </div>
+                  </motion.div>
                   {reasonOutput.previews.map((row, i) => {
                     const flagStyle = FLAG_STYLES[row.flag_type] || FLAG_STYLES.none
                     const flagLabel = row.flag_type === 'other' && row.flag_label ? row.flag_label : flagStyle.label
                     return (
                       <motion.div
                         key={i}
-                        initial={{ opacity: 0, y: 12 }}
+                        initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.35, delay: 0.1 + i * 0.08, ease: [0.4, 0, 0.2, 1] }}
+                        transition={{ duration: 0.3, delay: 0.1 + i * 0.06, ease: [0.4, 0, 0.2, 1] }}
                         style={{
-                          padding: '12px 14px',
-                          borderRadius: 'var(--radius-sm)',
-                          background: 'var(--bg)',
-                          border: `1px solid ${flagStyle.color}22`,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '10px 0',
+                          borderBottom: i < reasonOutput.previews.length - 1 ? '1px solid var(--border-subtle)' : 'none',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{row.name}</span>
-                          <span style={{ fontSize: 10.5, fontWeight: 500, color: 'var(--text-ghost)' }}>{row.role}</span>
-                          <span className="badge" style={{
-                            background: flagStyle.bg, color: flagStyle.color,
-                            border: `1px solid ${flagStyle.color}22`,
-                            fontSize: 10,
-                          }}>
-                            {flagLabel}
-                          </span>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)' }}>{row.name}</div>
+                          <div style={{ fontSize: 11, fontWeight: 500, color: 'var(--text-ghost)', marginTop: 1 }}>{row.role}</div>
                         </div>
-                        <div style={{
-                          fontSize: 12.5, color: 'var(--text-secondary)', fontWeight: 400,
-                          lineHeight: 1.55,
+                        <span className="badge" style={{
+                          background: flagStyle.bg, color: flagStyle.color,
+                          border: `1px solid ${flagStyle.color}22`,
+                          fontSize: 10, flexShrink: 0,
                         }}>
-                          {row.summary}
-                        </div>
+                          {flagLabel}
+                        </span>
                       </motion.div>
                     )
                   })}
-                </div>
 
-                {/* View dashboard button */}
-                <motion.button
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.1 + reasonOutput.previews.length * 0.08 }}
-                  onClick={() => navigate('/')}
-                  style={{
-                    marginTop: 16,
-                    width: '100%',
-                    padding: '10px 0',
+                  {/* View dashboard button - glowing CTA */}
+                  <motion.button
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.1 + reasonOutput.previews.length * 0.06 }}
+                    onClick={() => navigate('/')}
+                    className="glow-btn"
+                    style={{
+                      marginTop: 24,
+                      width: '100%',
+                      padding: '12px 0',
                     borderRadius: 'var(--radius-sm)',
-                    border: '1px solid var(--accent)',
-                    background: 'var(--accent-glow)',
+                    border: 'none',
+                    background: '#4A72F5',
                     fontSize: 13,
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontFamily: 'var(--font)',
-                    color: 'var(--accent)',
+                    color: '#fff',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     display: 'flex',
@@ -529,14 +509,15 @@ export default function Pipeline() {
                     justifyContent: 'center',
                     gap: 6,
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'var(--accent)'; e.currentTarget.style.color = '#fff' }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'var(--accent-glow)'; e.currentTarget.style.color = 'var(--accent)' }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-1px) scale(1.03)'; e.currentTarget.style.animationPlayState = 'paused'; e.currentTarget.style.boxShadow = '0 0 28px rgba(74, 114, 245, 0.8), 0 0 56px rgba(74, 114, 245, 0.4), 0 0 84px rgba(74, 114, 245, 0.2)' }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.animationPlayState = 'running'; e.currentTarget.style.boxShadow = '' }}
                 >
-                  View Full Dashboard
+                  View Dashboard & Recommended Actions
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14" /><path d="M12 5l7 7-7 7" />
                   </svg>
-                </motion.button>
+                  </motion.button>
+                </div>
               </div>
             )}
             </motion.div>
@@ -545,43 +526,6 @@ export default function Pipeline() {
         </div>
       )}
 
-      {/* Run metadata footer */}
-      {lastRun?.has_run && (
-        <div className="animate-in" style={{
-          animationDelay: '0.3s',
-          marginTop: 16,
-          marginBottom: 12,
-          padding: '12px 16px',
-          flexShrink: 0,
-          background: 'var(--bg-raised)',
-          border: '1px solid var(--border-subtle)',
-          borderRadius: 'var(--radius-sm)',
-          display: 'flex',
-          justifyContent: 'center',
-          gap: 32,
-        }}>
-          {[
-            { label: 'Session Runs', value: sessionRuns.toString() },
-            { label: 'Tokens Used', value: lastRun.total_tokens?.toLocaleString() },
-            { label: 'Cost', value: `$${(lastRun.total_cost_cents / 100).toFixed(4)}` },
-            { label: 'Duration', value: lastRun.duration_seconds ? `${lastRun.duration_seconds.toFixed(1)}s` : '-' },
-          ].map(item => (
-            <div key={item.label} style={{ textAlign: 'center' }}>
-              <div style={{
-                fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-                letterSpacing: '0.8px', color: 'var(--text-ghost)',
-              }}>
-                {item.label}
-              </div>
-              <div className="mono" style={{
-                fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginTop: 2,
-              }}>
-                {item.value || '-'}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   )
 }

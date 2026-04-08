@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { FLAG_STYLES, DEPARTMENTS } from '../lib/flags'
+import KpiSparkline from './KpiSparkline'
 
 function parseKpiProgress(kpi) {
   const target = kpi.target || ''
@@ -28,7 +29,7 @@ function parseKpiProgress(kpi) {
   return { targetNum, actualNum, fillPct: Math.max(0, fillPct), isInverted }
 }
 
-function KpiProgressBar({ kpi }) {
+function KpiProgressBar({ kpi, updates }) {
   const isRisk = kpi.status === 'at_risk'
   const isMissing = kpi.status === 'missing'
   const isOnTrack = kpi.status === 'on_track'
@@ -46,9 +47,12 @@ function KpiProgressBar({ kpi }) {
           {kpi.kpi_name}
         </span>
         {kpi.delta && kpi.delta !== '-' && (
-          <span className="mono" style={{ fontSize: 11, fontWeight: 700, color: deltaColor, marginLeft: 8, flexShrink: 0 }}>
-            {kpi.delta}
-          </span>
+          <>
+            <span className="mono" style={{ fontSize: 11, fontWeight: 700, color: deltaColor, marginLeft: 8, flexShrink: 0 }}>
+              {kpi.delta}
+            </span>
+            <KpiSparkline kpiName={kpi.kpi_name} updates={updates} />
+          </>
         )}
       </div>
 
@@ -93,7 +97,7 @@ function KpiProgressBar({ kpi }) {
   )
 }
 
-export default function EmployeeCard({ employee, index, priorityRank }) {
+export default function EmployeeCard({ employee, index, priorityRank, updates }) {
   const navigate = useNavigate()
   const analysis = employee.analysis
   const kpis = employee.kpi_extractions || []
@@ -138,9 +142,6 @@ export default function EmployeeCard({ employee, index, priorityRank }) {
             <div style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500, marginTop: 2 }}>
               {employee.role}
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500, marginTop: 1 }}>
-              {DEPARTMENTS[employee.role] || employee.department || ''}
-            </div>
           </div>
         </div>
         <span className="badge" style={{
@@ -167,7 +168,7 @@ export default function EmployeeCard({ employee, index, priorityRank }) {
                 <div key={i} style={{
                   borderBottom: i < kpis.length - 1 ? '1px solid var(--border-subtle)' : 'none',
                 }}>
-                  <KpiProgressBar kpi={kpi} />
+                  <KpiProgressBar kpi={kpi} updates={updates} />
                 </div>
               ))}
             </div>
@@ -199,18 +200,18 @@ export default function EmployeeCard({ employee, index, priorityRank }) {
             <div style={{
               marginTop: 12,
               padding: '10px 14px',
-              background: flagType !== 'none' ? `${flagStyle.color}08` : 'var(--accent-glow)',
+              background: `${flagStyle.color}12`,
               borderRadius: 'var(--radius-sm)',
-              borderLeft: `3px solid ${flagType !== 'none' ? flagStyle.color : 'var(--accent)'}`,
+              borderLeft: `3px solid ${flagStyle.color}`,
             }}>
               <span style={{
                 fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-                letterSpacing: '0.8px', color: flagType !== 'none' ? flagStyle.color : 'var(--accent)',
+                letterSpacing: '0.8px', color: flagStyle.color,
               }}>
                 Recommended Action
               </span>
               <div style={{
-                fontSize: 13, color: 'var(--text)', fontWeight: 600, marginTop: 4, lineHeight: 1.45,
+                fontSize: 13, color: 'var(--text)', fontWeight: 500, fontStyle: 'italic', marginTop: 4, lineHeight: 1.45,
               }}>
                 {analysis.recommended_action}
               </div>

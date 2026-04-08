@@ -9,6 +9,7 @@ import { sortBySeverity, FLAG_STYLES, worstDelta } from '../lib/flags'
 import EmployeeCard from '../components/EmployeeCard'
 import SlackFeed from '../components/SlackFeed'
 import TeamRollup from '../components/TeamRollup'
+import SentimentScatter from '../components/SentimentScatter'
 
 export default function Dashboard() {
   const navigate = useNavigate()
@@ -34,6 +35,14 @@ export default function Dashboard() {
   useEffect(() => { loadData() }, [loadData])
 
   const sorted = useMemo(() => sortBySeverity(employees), [employees])
+
+  const updatesByEmpId = useMemo(() => {
+    const map = {}
+    for (const entry of allUpdates) {
+      map[entry.id] = entry.updates || []
+    }
+    return map
+  }, [allUpdates])
 
   const headline = useMemo(() => {
     const hasAnalysis = employees.some(e => e.analysis)
@@ -141,7 +150,7 @@ export default function Dashboard() {
       )}
 
       {/* Main dashboard */}
-      <div style={{ padding: '24px 28px 40px', maxWidth: 1200, margin: '0 auto' }}>
+      <div style={{ padding: '24px 28px 40px' }}>
         {/* Header */}
         <div className="animate-in" style={{
           display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
@@ -209,10 +218,27 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Team rollup */}
-        {!loading && <TeamRollup employees={employees} />}
+        {/* Team rollup + visualizations row */}
+        {!loading && (() => {
+          const showViz = allUpdates.length > 0 && employees.some(e => e.analysis)
+          if (!showViz) return <div style={{ marginTop: 20 }}><TeamRollup employees={employees} /></div>
+          return (
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '65fr 35fr',
+              gap: 14,
+              marginTop: 20,
+              gridTemplateRows: '1fr',
+            }}>
+              <TeamRollup employees={employees} />
+              <div style={{ minHeight: 0, overflow: 'hidden' }}>
+                <SentimentScatter employees={employees} allUpdates={allUpdates} />
+              </div>
+            </div>
+          )
+        })()}
 
-        {/* Employee cards */}
+        {/* Employee cards - full width */}
         <div style={{ marginTop: 24 }}>
           <div className="section-header">Team Performance</div>
 
@@ -244,6 +270,7 @@ export default function Dashboard() {
                     employee={emp}
                     index={i}
                     priorityRank={flaggedIndex >= 0 ? flaggedIndex + 1 : null}
+                    updates={updatesByEmpId[emp.id]}
                   />
                 )
               })}
@@ -251,40 +278,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* Run metadata footer */}
-        {lastRun?.has_run && (
-          <div className="animate-in" style={{
-            animationDelay: '0.4s',
-            marginTop: 28,
-            padding: '12px 16px',
-            background: 'var(--bg-raised)',
-            border: '1px solid var(--border-subtle)',
-            borderRadius: 'var(--radius-sm)',
-            display: 'flex',
-            justifyContent: 'center',
-            gap: 32,
-          }}>
-            {[
-              { label: 'Tokens Used', value: lastRun.total_tokens?.toLocaleString() },
-              { label: 'Cost', value: `$${(lastRun.total_cost_cents / 100).toFixed(4)}` },
-              { label: 'Duration', value: lastRun.duration_seconds ? `${lastRun.duration_seconds.toFixed(1)}s` : '-' },
-            ].map(item => (
-              <div key={item.label} style={{ textAlign: 'center' }}>
-                <div style={{
-                  fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
-                  letterSpacing: '0.8px', color: 'var(--text-ghost)',
-                }}>
-                  {item.label}
-                </div>
-                <div className="mono" style={{
-                  fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', marginTop: 2,
-                }}>
-                  {item.value || '-'}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
     </>
   )
