@@ -1,7 +1,7 @@
 """Pipeline trigger and status endpoints."""
 
 import threading
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, g
 
 from models import PipelineRun
 from pipeline import run_pipeline, run_stage, is_pipeline_running
@@ -16,7 +16,8 @@ def trigger_pipeline():
 
     from flask import current_app
     app = current_app._get_current_object()
-    t = threading.Thread(target=run_pipeline, args=(app,), daemon=True)
+    session_id = g.session_id
+    t = threading.Thread(target=run_pipeline, args=(app, session_id), daemon=True)
     t.start()
     return jsonify({'message': 'Pipeline started'}), 202
 
@@ -38,7 +39,8 @@ def trigger_stage(stage):
 
     from flask import current_app
     app = current_app._get_current_object()
-    t = threading.Thread(target=run_stage, args=(app, stage), daemon=True)
+    session_id = g.session_id
+    t = threading.Thread(target=run_stage, args=(app, stage, session_id), daemon=True)
     t.start()
     return jsonify({'message': f'Stage {stage} started'}), 202
 

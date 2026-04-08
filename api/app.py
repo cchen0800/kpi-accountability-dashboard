@@ -5,14 +5,14 @@ Application factory. Registers blueprints, initializes DB, and handles SPA servi
 
 import os
 import logging
-import threading
 
 from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
 from werkzeug.middleware.proxy_fix import ProxyFix
 
-from config import FLASK_DEBUG, CORS_ORIGIN, SECRET_KEY, SQLALCHEMY_DATABASE_URI, SYNTHETIC_DATA_PATH, DB_DIR
-from models import db, Employee, PipelineRun
+from config import FLASK_DEBUG, CORS_ORIGIN, SECRET_KEY, SQLALCHEMY_DATABASE_URI, DB_DIR
+from models import db
+from session_db import before_request_handler, after_request_handler, cleanup_old_sessions
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%Y-%m-%d %H:%M:%S")
 log = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ def create_app():
 
     app.secret_key = SECRET_KEY
 
-    # Database config
+    # Database config — placeholder URI, actual binding is per-session
     os.makedirs(DB_DIR, exist_ok=True)
     app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -51,6 +51,10 @@ def create_app():
     # Auth middleware
     app.before_request(require_auth)
 
+    # Session-scoped database middleware
+    app.before_request(lambda: before_request_handler(db))
+    app.after_request(after_request_handler)
+
     # Health check
     @app.route("/api/health")
     def health():
@@ -59,21 +63,13 @@ def create_app():
     # SPA serving (production)
     _register_spa_routes(app)
 
-    # Init DB and seed employees
+    # Create tables in the default DB (needed for Flask-SQLAlchemy init)
     with app.app_context():
         db.create_all()
-        log.info("Syncing employee data from synthetic_data.json...")
-        Employee.seed_from_json(SYNTHETIC_DATA_PATH)
-        log.info("Employee data synced.")
+        log.info("App initialized. Session DBs created on demand.")
 
-        # Auto-run pipeline if no analysis data exists (safety net)
-        has_data = PipelineRun.query.filter_by(status='complete').first() is not None
-        if not has_data:
-            if not FLASK_DEBUG or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
-                log.info("No analysis data found. Auto-running pipeline...")
-                from pipeline import run_pipeline
-                t = threading.Thread(target=run_pipeline, args=(app,), daemon=True)
-                t.start()
+    # Clean up stale session DBs on startup
+    cleanup_old_sessions()
 
     return app
 

@@ -1,13 +1,14 @@
 """
 Three-stage agentic pipeline: Generate → Extract → Reason
 
-Stage 1 (Generation): GPT generates 5 daily standup updates per employee
+Stage 1 (Generation): Loads pre-written standup sets from synthetic_data.json (rotating)
 Stage 2 (Extraction): GPT extracts structured KPI data from updates (no hidden_truth)
 Stage 3 (Reasoning): GPT reasons over extracted data to assign flags + narrative (no hidden_truth)
 """
 
 import json
 import logging
+import os
 import re
 from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeoutError
 from datetime import datetime, timezone
@@ -18,10 +19,17 @@ from config import OPENAI_MODEL, OPENAI_TIMEOUT_SECONDS
 
 log = logging.getLogger(__name__)
 
-FICTIONAL_BRANDS = "Northwind Athletics, Petalcrest Beauty, Harborline Foods, Ridgeway Outdoors, Cinderhouse Coffee"
 WEEKDAYS = ["monday", "tuesday", "wednesday", "thursday", "friday"]
 MISSING_TOKENS = {"", "-", "-", "n/a", "na", "unknown", "none", "not provided"}
 REASON_WORKER_TIMEOUT_SECONDS = max(OPENAI_TIMEOUT_SECONDS + 5.0, 30.0)
+
+
+def _load_standup_sets():
+    """Load pre-written standup sets from synthetic_data.json."""
+    json_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'synthetic_data.json')
+    with open(json_path, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return data.get('standup_sets', [])
 
 
 def _as_kpi_list(raw_kpis):
@@ -42,78 +50,6 @@ def _as_kpi_list(raw_kpis):
         return [text]
     return [str(raw_kpis).strip()]
 
-
-def _extract_weekdays(text):
-    if not text:
-        return []
-    found = re.findall(r"\b(monday|tuesday|wednesday|thursday|friday)\b", str(text).lower())
-    deduped = []
-    seen = set()
-    for day in found:
-        if day not in seen:
-            deduped.append(day)
-            seen.add(day)
-    return deduped
-
-
-def _infer_expected_submission_days(hidden_truth):
-    truth = (hidden_truth or "").lower()
-    has_explicit_skip_language = any(
-        phrase in truth
-        for phrase in ("skip", "does not post", "missing day", "only generate", "posts on", "submits on")
-    )
-    if not has_explicit_skip_language:
-        return WEEKDAYS[:]
-
-    explicit_post_match = re.search(r"(posts on|submits on)\s+([^.]*)", truth)
-    if explicit_post_match:
-        posted_days = _extract_weekdays(explicit_post_match.group(2))
-        if posted_days:
-            return [d for d in WEEKDAYS if d in posted_days]
-
-    paren_only_match = re.search(r"only generate[^()]*\(([^)]*)\)", truth)
-    if paren_only_match:
-        posted_days = _extract_weekdays(paren_only_match.group(1))
-        if posted_days:
-            return [d for d in WEEKDAYS if d in posted_days]
-
-    skipped_days = []
-    skip_match = re.search(r"skips?\s+([^.]*)", truth)
-    if skip_match:
-        skipped_days = _extract_weekdays(skip_match.group(1))
-
-    if skipped_days:
-        return [d for d in WEEKDAYS if d not in skipped_days]
-
-    # If skip language exists but days are unclear, keep default weekdays.
-    return WEEKDAYS[:]
-
-
-def _normalize_generated_updates(raw_updates):
-    if not isinstance(raw_updates, list):
-        return []
-    cleaned = []
-    seen_days = set()
-    for item in raw_updates:
-        if not isinstance(item, dict):
-            continue
-        day = str(item.get("day", "")).strip().lower()
-        content = str(item.get("content", "")).strip()
-        if day not in WEEKDAYS or not content or day in seen_days:
-            continue
-        cleaned.append({"day": day, "content": content})
-        seen_days.add(day)
-    cleaned.sort(key=lambda x: WEEKDAYS.index(x["day"]))
-    return cleaned
-
-
-def _contains_week_total_language(content):
-    text = (content or "").lower()
-    if re.search(r"\b\d+(?:\.\d+)?\b[^.!?\n]{0,24}\bthis week\b", text):
-        return True
-    if "finished the week" in text:
-        return True
-    return False
 
 
 def _clean_str(value):
@@ -599,84 +535,14 @@ def _normalize_extracted_kpis(emp, raw_data, updates):
     return normalized
 
 
-def _validate_generated_updates(emp, updates, expected_days):
-    errors = []
-    days = [u.get("day") for u in updates]
-    expected_set = set(expected_days)
-    day_set = set(days)
 
-    if day_set != expected_set:
-        missing = [d for d in expected_days if d not in day_set]
-        extra = [d for d in days if d not in expected_set]
-        if missing:
-            errors.append(f"Missing required day(s): {', '.join(missing)}")
-        if extra:
-            errors.append(f"Unexpected day(s): {', '.join(extra)}")
-
-    if len(days) != len(day_set):
-        errors.append("Duplicate day entries are not allowed")
-
-    expected_kpis = _build_expected_kpis(emp.kpis)
-    has_count_week = any(spec["kind"] == "count_week" for spec in expected_kpis)
-    if has_count_week:
-        for update in updates:
-            if update["day"] != "friday" and _contains_week_total_language(update["content"]):
-                errors.append("Non-Friday update uses week-total phrasing for numeric KPI")
-                break
-
-        for spec in expected_kpis:
-            if spec["kind"] != "count_week":
-                continue
-            coverage = _count_metric_coverage(spec["source"], updates)
-            if coverage < len(expected_days):
-                errors.append(
-                    f"Count KPI '{spec['name']}' must include explicit daily increment evidence on all required days"
-                )
-
-            total = _extract_count_total_for_kpi(spec["source"], updates)
-            target = _target_number(spec["target"])
-            if total is not None and target and total > target * 2.5:
-                errors.append(f"Count KPI '{spec['name']}' appears to use weekly totals repeatedly")
-
-    has_quarter_outcome = any(spec["kind"] == "quarter_outcome" for spec in expected_kpis)
-    if has_quarter_outcome:
-        status_keywords = re.compile(
-            r"\b(renewed?|stalled|blocked|shipped|delayed|signed|slipping|on track|behind|paused|pending)\b",
-            re.IGNORECASE,
-        )
-        for spec in expected_kpis:
-            if spec["kind"] != "quarter_outcome":
-                continue
-            kpi_tokens = _tokenize(spec["source"])
-            found_signal = False
-            for update in updates:
-                content = (update.get("content") or "").lower()
-                if any(tok in content for tok in kpi_tokens) and status_keywords.search(content):
-                    found_signal = True
-                    break
-            if not found_signal:
-                errors.append(
-                    f"Quarter KPI '{spec['name']}' must include at least one status signal "
-                    f"(e.g., stalled/renewed/blocked/shipped) near KPI-related terms"
-                )
-
-    return errors
-
-
-def _repair_generated_updates(updates, expected_days):
-    by_day = {u["day"]: u["content"] for u in updates if u.get("day") in WEEKDAYS and u.get("content")}
-    repaired = []
-    for day in expected_days:
-        content = by_day.get(day)
-        if not content:
-            content = "Quick update: made steady progress on core KPI work today and stayed responsive to stakeholders."
-        repaired.append({"day": day, "content": content})
-    return repaired
-
-
-def run_pipeline(app):
+def run_pipeline(app, session_id=None):
     """Main pipeline orchestrator. Runs in a background thread."""
     with app.app_context():
+        if session_id:
+            from session_db import bind_session_in_thread
+            bind_session_in_thread(session_id, db)
+
         run = PipelineRun(started_at=datetime.now(timezone.utc), status='pending')
         db.session.add(run)
         db.session.commit()
@@ -729,9 +595,13 @@ def run_pipeline(app):
             db.session.commit()
 
 
-def run_stage(app, stage):
+def run_stage(app, stage, session_id=None):
     """Run a single pipeline stage. Called from per-stage API endpoints."""
     with app.app_context():
+        if session_id:
+            from session_db import bind_session_in_thread
+            bind_session_in_thread(session_id, db)
+
         # Get or create a pipeline run
         run = PipelineRun.query.filter(
             PipelineRun.status.in_(['stage_generate_done', 'stage_extract_done', 'pending'])
@@ -810,35 +680,31 @@ def _snapshot_employees(employees):
 
 
 def _run_generate_stage(run, employees):
-    """Stage 1: Generate standup updates. Returns (prompt_tokens, completion_tokens)."""
+    """Stage 1: Load pre-written standup updates. Returns (0, 0) — no API calls."""
     run.status = 'generating'
     run.stage = 'generation'
     run_id = run.id
     db.session.commit()
-    log.info("Pipeline [%d] Stage 1: Generating updates...", run_id)
+    log.info("Pipeline [%d] Stage 1: Loading standup set...", run_id)
 
-    emps = _snapshot_employees(employees)
+    standup_sets = _load_standup_sets()
+    if not standup_sets:
+        raise ValueError("No standup sets found in synthetic_data.json")
 
-    # Parallelize GPT calls across employees
-    with ThreadPoolExecutor(max_workers=5) as pool:
-        futures = {pool.submit(_generate_updates, emp): emp for emp in emps}
+    completed_count = PipelineRun.query.filter_by(status='complete').count()
+    set_index = completed_count % len(standup_sets)
+    selected_set = standup_sets[set_index]
+    log.info("Pipeline [%d] Using standup set %d of %d", run_id, set_index + 1, len(standup_sets))
 
-    total_p, total_c = 0, 0
-    for future, emp in futures.items():
-        result = future.result()
-        total_p += result['prompt_tokens']
-        total_c += result['completion_tokens']
-
-        updates = result['data'].get('updates', result['data'].get('days', []))
-        for update in updates:
-            db.session.add(GeneratedUpdate(
-                employee_id=emp.id,
-                day=update.get('day', '').lower(),
-                content=update.get('content', ''),
-                pipeline_run_id=run_id,
-            ))
+    for update in selected_set:
+        db.session.add(GeneratedUpdate(
+            employee_id=update['employee_id'],
+            day=update['day'].lower(),
+            content=update['text'],
+            pipeline_run_id=run_id,
+        ))
     db.session.commit()
-    return total_p, total_c
+    return 0, 0
 
 
 def _run_extract_stage(run, employees):
@@ -1016,76 +882,6 @@ def _clear_previous_data(current_run_id):
     ).delete()
     db.session.commit()
 
-
-def _generate_updates(emp):
-    """Stage 1: Generate daily standup updates for an employee."""
-    expected_days = _infer_expected_submission_days(emp.hidden_truth)
-    days_list = ", ".join(day.title() for day in expected_days)
-
-    system = (
-        "You write casual Slack #daily-standup messages for a fictional company.\n\n"
-        "RULES:\n"
-        "- Plain text only. No markdown, no bold, no headers, no bullet points. Flowing sentences, 1-4 per update.\n"
-        "- Emojis OK mid-sentence, never as section headers/prefixes.\n"
-        "- Fictional brands ONLY: Northwind Athletics, Petalcrest Beauty, Harborline Foods, Ridgeway Outdoors, Cinderhouse Coffee. No real brands.\n"
-        "- Day values: lowercase weekday strings (monday/tuesday/wednesday/thursday/friday). One update per required day.\n"
-        "- For '/week' count KPIs: report THAT DAY'S increment, not running/weekly totals.\n"
-        "- Consistent units across days. No contradictions.\n"
-        "- For quarterly/outcome KPIs (renewals, shipping features, revenue targets): each update MUST mention the current state of at least one tracked item using status words like signed, renewed, stalled, blocked, shipped, delayed, on track, slipping.\n\n"
-        "Return JSON: {\"updates\": [{\"day\": \"monday\", \"content\": \"...\"}]}"
-    )
-
-    base_user = (
-        f"Generate daily standup Slack messages for {emp.name}, "
-        f"a {emp.role} at Lumen Collective (Series C UGC marketplace, 180 employees).\n\n"
-        f"Required submission days for this run: {days_list}.\n"
-        f"Writing style: {emp.writing_style}\n"
-        f"KPI targets: {emp.kpis}\n"
-        f"Hidden truth to embed subtly: {emp.hidden_truth}\n\n"
-        f"Each update should:\n"
-        f"- Sound like a real Slack message, not a report\n"
-        f"- Match the writing style in tone, structure, and vocabulary\n"
-        f"- Reference fictional brand clients naturally (listed in system prompt)\n"
-        f"- Embed the hidden truth subtly - don't make it obvious\n"
-        f"- Include at least one extractable progress indicator per KPI per update - a count, a status word (signed/stalled/blocked/shipped), a milestone, or a percentage. The writing style controls HOW things are said, not WHETHER progress evidence appears.\n\n"
-        f"Return JSON: {{\"updates\": [{{\"day\": \"monday\", \"content\": \"...\"}}]}}"
-    )
-
-    retry_feedback = ""
-    last_result = None
-    normalized_updates = []
-    last_errors = []
-
-    for _ in range(2):
-        result = call_gpt(system, f"{base_user}{retry_feedback}")
-        raw_updates = result["data"].get("updates", result["data"].get("days", []))
-        normalized_updates = _normalize_generated_updates(raw_updates)
-        errors = _validate_generated_updates(emp, normalized_updates, expected_days)
-
-        if not errors:
-            result["data"] = {"updates": normalized_updates}
-            return result
-
-        last_result = result
-        last_errors = errors
-        retry_feedback = (
-            "\n\nPrevious output failed validation. Return corrected JSON only.\n"
-            + "\n".join(f"- {error}" for error in errors[:4])
-        )
-
-    repaired = _repair_generated_updates(normalized_updates, expected_days)
-    if repaired:
-        log.warning(
-            "Stage 1 auto-repaired updates for %s after validation errors: %s",
-            emp.name,
-            "; ".join(last_errors) if last_errors else "unknown",
-        )
-        if last_result is None:
-            last_result = {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
-        last_result["data"] = {"updates": repaired}
-        return last_result
-
-    raise ValueError(f"Unable to produce valid stage-1 updates for {emp.name}")
 
 
 def _extract_kpis(emp, updates):
