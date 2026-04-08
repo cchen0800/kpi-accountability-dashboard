@@ -1,0 +1,29 @@
+[
+{ "employee_id": "emp_001", "day": "Monday", "text": "32 new creators onboarded. Response time 15hr. Northwind and Petalcrest pools at 100% utilization. Zero QC flags. Tuesday queue set with 30 in final review " },
+{ "employee_id": "emp_001", "day": "Tuesday", "text": "34 new creators onboarded. Response time 14hr. Harborline and Ridgeway fully staffed. One minor QC flag resolved same-day. Wednesday queue ready with 33 pending" },
+{ "employee_id": "emp_001", "day": "Wednesday", "text": "35 new creators onboarded. Response time 15hr. Cinderhouse and Petalcrest at full coverage. Clean pipeline, no escalations. Thursday queue at 31 in review" },
+{ "employee_id": "emp_001", "day": "Thursday", "text": "31 new creators onboarded. Response time 16hr. Northwind and Ridgeway fully staffed. Zero backlog. Friday queue holding 29 final approvals" },
+{ "employee_id": "emp_001", "day": "Friday", "text": "33 new creators onboarded. Response time 14hr. All brand pools fully staffed across board. No QC issues. Best week throughput, next week queue prepped at 28" },
+
+{ "employee_id": "emp_002", "day": "Monday", "text": "Had a really constructive start to the week with Harborline and Petalcrest, both conversations felt productive even though there are still some internal approvals on their side. Harborline mentioned some concerns but overall energy felt positive and collaborative, so feeling like we’re still in a good place as we work through details" },
+{ "employee_id": "emp_002", "day": "Tuesday", "text": "Petalcrest follow-up today and they introduced a budget freeze conversation which wasn’t on the radar before, still trying to understand scope but keeping things moving and staying optimistic. Harborline continuing discussions, some hesitation but still engaged which feels like a good sign overall" },
+{ "employee_id": "emp_002", "day": "Wednesday", "text": "Petalcrest expansion officially paused due to budget freeze, which is definitely a shift but trying to reframe around long-term relationship and future opportunity. Harborline call felt a bit more uncertain than earlier in the week, still hoping to stabilize things but starting to feel less predictable" },
+{ "employee_id": "emp_002", "day": "Thursday", "text": "Harborline decided not to renew which was unexpected and honestly a tough call to process given how conversations started earlier. Petalcrest still frozen on expansion. Trying to redirect focus toward other accounts in pipeline but definitely a heavier day overall" },
+{ "employee_id": "emp_002", "day": "Friday", "text": "Still processing the Harborline loss and Petalcrest freeze, both significant hits this week and not what we planned for. Conversations with other accounts are ongoing but this was a tough reset moment. Focusing on rebuilding momentum going into next week" },
+
+{ "employee_id": "emp_003", "day": "Monday", "text": "start week — 2 experiments launched. Northwind ROAS 3.1x, CPM flat WoW, CAC down 5%. Petalcrest CTR 2.2%. Harborline video VTR 10%. pacing stable" },
+{ "employee_id": "emp_003", "day": "Friday", "text": "week close — 2 experiments total. Cinderhouse ROAS 3.0x, CPM down 8%, CAC down 6%. Ridgeway CTR 2.5%. portfolio avg 2.9x. stable performance" },
+
+{ "employee_id": "emp_004", "day": "Monday", "text": "47 dials, 2 meetings — Northwind and Ridgeway, solid start" },
+{ "employee_id": "emp_004", "day": "Tuesday", "text": "49 dials, 2 meetings — Petalcrest and Cinderhouse, feeling good" },
+{ "employee_id": "emp_004", "day": "Wednesday", "text": "45 dials, 1 meeting — Harborline, quick win" },
+{ "employee_id": "emp_004", "day": "Thursday", "text": "50 dials, 2 meetings — Ridgeway and net-new, stacking nicely" },
+{ "employee_id": "emp_004", "day": "Friday", "text": "48 dials, 3 meetings — Northwind, Petalcrest, Cinderhouse, crushed it this week" },
+
+{ "employee_id": "emp_005", "day": "Monday", "text": "Spent time finalizing Creator Matching v2 requirements with engineering and aligning on final edge cases before release. Completed 1 research session with a brand client which helped validate filtering assumptions, feeling close to pushing something live" },
+{ "employee_id": "emp_005", "day": "Tuesday", "text": "Wrapped final prep for v2 beta and confirmed deployment plan with engineering. Ran another research session bringing total to 2 so far, insights are consistent and reinforcing prioritization decisions. No major blockers heading into launch" },
+{ "employee_id": "emp_005", "day": "Wednesday", "text": "Creator Matching v2 beta pushed to production today and is now live for initial users. Deployed successfully with no critical issues. Completed third research session post-launch to gather immediate feedback which is already proving useful" },
+{ "employee_id": "emp_005", "day": "Thursday", "text": "Monitoring v2 beta performance and iterating on minor bugs identified by early users, nothing blocking but a few edge cases around filtering logic. Completed fourth research session, feedback largely positive with some actionable tweaks" },
+{ "employee_id": "emp_005", "day": "Friday", "text": "Continued iteration on v2 beta with a couple of small bug fixes deployed, system is stable and adoption trending in the right direction. No new research sessions today so total at 4, focusing on consolidating insights and planning next iteration" }
+]
+

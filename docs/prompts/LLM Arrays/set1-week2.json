@@ -1,0 +1,127 @@
+[
+  {
+    "employee_id": "emp_001",
+    "day": "Monday",
+    "text": "6 creators onboarded today. Response time at 21hr avg. Ridgeway Outdoors creator batch fully vetted. Tomorrow targeting 5 more apps from the queue."
+  },
+  {
+    "employee_id": "emp_001",
+    "day": "Tuesday",
+    "text": "5 creators onboarded today. Response time holding at 22hr. Petalcrest Beauty onboarding flow smooth with zero delays. Queue has 12 pending for tomorrow."
+  },
+  {
+    "employee_id": "emp_001",
+    "day": "Wednesday",
+    "text": "5 creators onboarded today. Response time ticking up to 22hr. Harborline Foods campaign roster locked and active. Prepping Thursday batch now."
+  },
+  {
+    "employee_id": "emp_001",
+    "day": "Thursday",
+    "text": "6 creators onboarded today. Response time stable at 21hr. Cinderhouse Coffee creator cohort ramping up nicely. All systems go for Friday push."
+  },
+  {
+    "employee_id": "emp_001",
+    "day": "Friday",
+    "text": "5 creators onboarded today. Response time averaged 22hr for the week, slightly above baseline but under the 24hr target. Northwind Athletics final reviews done. Wrapping up at 27 total for the week."
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Monday",
+    "text": "Had a really fantastic conversation with the Northwind Athletics team this morning and the energy in the room felt incredibly aligned with where we want to take the partnership. We covered the renewal terms in depth and I can genuinely feel us moving past the final negotiation hurdles into a signed agreement phase, plus the Petalcrest Beauty stakeholders brought up some exciting expansion possibilities for next quarter that really validate our recent strategy shifts."
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Tuesday",
+    "text": "Northwind Athletics is officially signed on for the renewal and the whole team is buzzing about locking that in, which is such a massive win for our enterprise retention goals. On the Petalcrest front we actually dug into the expansion revenue numbers today and they are looking at committing an additional eighteen percent to their Q1 media budget, so I am just thrilled with how quickly this momentum is building across both accounts."
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Wednesday",
+    "text": "The Petalcrest Beauty expansion conversation continued and we finally mapped out the exact deliverable mix with them committing to a fifteen percent budget increase that directly hits our target for the quarter. Northwind is already fully operational on the new terms and the client success team over there is giving us incredibly warm feedback on the campaign rollout."
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Thursday",
+    "text": "Spent the morning wrapping up final compliance docs for the Northwind renewal and everything is officially in the system which feels like such a huge weight lifted. Petalcrest expansion budget is fully approved by their procurement team and we are just waiting on the final green light from their VP to execute the additional spend."
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Friday",
+    "text": "Closing out the week on an incredibly high note with both major enterprise accounts moving exactly where we wanted them. Northwind is fully live and Petalcrest is ready to scale the new fifteen percent expansion package next week, leaving me feeling really confident about hitting our quarterly retention targets early."
+  },
+  {
+    "employee_id": "emp_003",
+    "day": "Monday",
+    "text": "CAC flat at 0 percent WoW change. CPM $14.20, CTR 1.4 percent. ROAS holding at 2.5x. Launched 1 experiment: Harborline video ads. Target CAC reduction remains unmet."
+  },
+  {
+    "employee_id": "emp_003",
+    "day": "Tuesday",
+    "text": "CAC unchanged. CPM $14.35, CTR 1.3 percent. ROAS steady 2.5x. Harborline engagement tracking normal. Pending 2 more experiments for weekly target."
+  },
+  {
+    "employee_id": "emp_003",
+    "day": "Wednesday",
+    "text": "CAC still 0 percent delta. CPM $14.50, CTR 1.2 percent. ROAS 2.4x. Second experiment launched: Cinderhouse carousel at 1.5 percent CTR. Weekly count 2 of 3. CAC not improving."
+  },
+  {
+    "employee_id": "emp_003",
+    "day": "Thursday",
+    "text": "CAC flatline continues. CPM $14.40, CTR 1.35 percent. ROAS 2.5x. No new experiments today, reviewing Wednesday results. Weekly output capped at 2. CAC reduction stalled."
+  },
+  {
+    "employee_id": "emp_003",
+    "day": "Friday",
+    "text": "CAC unchanged for week. CPM $14.45, CTR 1.25 percent. ROAS 2.4x. Final tally: 2 experiments launched. CAC reduction target missed. Data exported for Monday optimization."
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Monday",
+    "text": "48 dials today, 6 meetings booked. Ridgeway Outdoors referral stream is looking pretty solid. Good momentum to start the week."
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Tuesday",
+    "text": "42 dials today, 8 meetings booked. Northwind Athletics contacts are actually picking up. Week is tracking right on pace."
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Wednesday",
+    "text": "45 dials today, 7 meetings booked. Petalcrest Beauty outreach hitting the mark. Keeping the pipeline full and steady."
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Thursday",
+    "text": "50 dials today, 7 meetings booked. Harborline Foods leads are converting nicely. Almost at the weekly goal."
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Friday",
+    "text": "44 dials today, 6 meetings booked. Wrapped up the week at 229 total dials and 34 meetings booked overall. Solid week all around."
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Monday",
+    "text": "Spent the day iterating on the Creator Matching v2 spec and finally got the engineering team to align on the core algorithm parameters. The stakeholder input from design really helped clarify the speed versus accuracy tradeoff. We ran the first of our weekly research sessions today and gathered some really meaningful qualitative feedback on the onboarding friction points."
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Tuesday",
+    "text": "The engineering alignment from yesterday held up through the architecture review, which is a huge step forward. We blocked out time to run two more user research sessions to hit our weekly cadence. The product team is actively iterating on the feedback loops based on this morning's creator cohort."
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Wednesday",
+    "text": "Successfully completed the second and third research sessions today, bringing our weekly total to three. The v2 spec is now fully locked after incorporating the latest stakeholder input, and we are ready to move from planning into implementation. No major blockers remaining on the tech side."
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Thursday",
+    "text": "Wrapping up the fourth user research session this afternoon, which puts us at four out of five for the week. The matching algorithm parameters are officially approved by the product lead and engineering, so we are transitioning straight into sprint planning for implementation. The qualitative data is painting a clear path forward."
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Friday",
+    "text": "Final research session shifted to next week but we closed out with four solid sessions this time around. The v2 spec is fully approved and locked, and engineering has already started pulling tickets for the first implementation phase. Feeling really good about the alignment and the tangible progress on the roadmap."
+  }
+]

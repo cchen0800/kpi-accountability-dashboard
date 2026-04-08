@@ -230,27 +230,27 @@
       {
         "employee_id": "emp_002",
         "day": "Monday",
-        "text": "Had a really fantastic conversation with the Northwind Athletics team this morning and the energy in the room felt incredibly aligned with where we want to take the partnership. We covered the renewal terms in depth and I can genuinely feel us moving past the final negotiation hurdles into a signed agreement phase, plus the Petalcrest Beauty stakeholders brought up some exciting expansion possibilities for next quarter that really validate our recent strategy shifts."
+        "text": "Had such an amazing conversation with the Northwind Athletics team this morning and the energy is just buzzing. We went really deep on the renewal terms and I can feel us getting closer every day to locking this in. Petalcrest Beauty also had some exciting things to say about expanding next quarter which is so validating for our strategy."
       },
       {
         "employee_id": "emp_002",
         "day": "Tuesday",
-        "text": "Northwind Athletics is officially signed on for the renewal and the whole team is buzzing about locking that in, which is such a massive win for our enterprise retention goals. On the Petalcrest front we actually dug into the expansion revenue numbers today and they are looking at committing an additional eighteen percent to their Q1 media budget, so I am just thrilled with how quickly this momentum is building across both accounts."
+        "text": "Another incredible touchpoint with Northwind today and they said they are 'very close' to sending over the signed renewal which makes me so happy. The whole vibe is just so positive and I really believe this is going to land any day now. Petalcrest also mentioned they are reviewing their budget internally for a potential expansion which is exciting to hear even though nothing is confirmed yet."
       },
       {
         "employee_id": "emp_002",
         "day": "Wednesday",
-        "text": "The Petalcrest Beauty expansion conversation continued and we finally mapped out the exact deliverable mix with them committing to a fifteen percent budget increase that directly hits our target for the quarter. Northwind is already fully operational on the new terms and the client success team over there is giving us incredibly warm feedback on the campaign rollout."
+        "text": "Petalcrest expansion conversation is feeling really promising and we are getting into the details of what a bigger commitment could look like for next quarter. Northwind said they just need one more internal sign-off which is totally normal for enterprise deals of this size. Everything is moving in such a beautiful direction and I am feeling incredibly optimistic about both of these."
       },
       {
         "employee_id": "emp_002",
         "day": "Thursday",
-        "text": "Spent the morning wrapping up final compliance docs for the Northwind renewal and everything is officially in the system which feels like such a huge weight lifted. Petalcrest expansion budget is fully approved by their procurement team and we are just waiting on the final green light from their VP to execute the additional spend."
+        "text": "Northwind said they are still working through compliance on their end which is taking a little longer than expected but I am not worried because this always happens with large renewals. Petalcrest went quiet today which I am choosing to read as them being busy internally. The important thing is the relationship is strong and these things just take time."
       },
       {
         "employee_id": "emp_002",
         "day": "Friday",
-        "text": "Closing out the week on an incredibly high note with both major enterprise accounts moving exactly where we wanted them. Northwind is fully live and Petalcrest is ready to scale the new fifteen percent expansion package next week, leaving me feeling really confident about hitting our quarterly retention targets early."
+        "text": "Closing out the week and honestly I could not be more optimistic about where Northwind and Petalcrest stand. Neither has signed yet but I just know it is coming because every conversation this week has been so full of positive energy and genuine excitement. I am going into the weekend feeling incredibly confident about next week being the week we close these."
       },
       {
         "employee_id": "emp_003",
@@ -259,18 +259,8 @@
       },
       {
         "employee_id": "emp_003",
-        "day": "Tuesday",
-        "text": "CAC unchanged. CPM $14.35, CTR 1.3 percent. ROAS steady 2.5x. Harborline engagement tracking normal. Pending 2 more experiments for weekly target."
-      },
-      {
-        "employee_id": "emp_003",
-        "day": "Wednesday",
-        "text": "CAC still 0 percent delta. CPM $14.50, CTR 1.2 percent. ROAS 2.4x. Second experiment launched: Cinderhouse carousel at 1.5 percent CTR. Weekly count 2 of 3. CAC not improving."
-      },
-      {
-        "employee_id": "emp_003",
         "day": "Thursday",
-        "text": "CAC flatline continues. CPM $14.40, CTR 1.35 percent. ROAS 2.5x. No new experiments today, reviewing Wednesday results. Weekly output capped at 2. CAC reduction stalled."
+        "text": "catching up on tue/wed — second experiment launched midweek. Harborline carousel at 1.5% CTR. CPM $14.40, CTR 1.35% avg. ROAS 2.5x. Portfolio still showing CAC flat. only 2 experiments for the week, target was 3."
       },
       {
         "employee_id": "emp_003",
@@ -280,52 +270,52 @@
       {
         "employee_id": "emp_004",
         "day": "Monday",
-        "text": "48 dials today, 6 meetings booked. Ridgeway Outdoors referral stream is looking pretty solid. Good momentum to start the week."
+        "text": "48 dials today, 5 meetings booked. Ridgeway Outdoors referral stream is solid. Good momentum to start the week."
       },
       {
         "employee_id": "emp_004",
         "day": "Tuesday",
-        "text": "42 dials today, 8 meetings booked. Northwind Athletics contacts are actually picking up. Week is tracking right on pace."
+        "text": "42 dials today, 4 meetings booked. Northwind Athletics contacts are picking up but some reschedules. Week is on pace on dials."
       },
       {
         "employee_id": "emp_004",
         "day": "Wednesday",
-        "text": "45 dials today, 7 meetings booked. Petalcrest Beauty outreach hitting the mark. Keeping the pipeline full and steady."
+        "text": "45 dials today, 3 meetings booked. Petalcrest Beauty conversations are there but not converting to bookings. Dial volume staying strong."
       },
       {
         "employee_id": "emp_004",
         "day": "Thursday",
-        "text": "50 dials today, 7 meetings booked. Harborline Foods leads are converting nicely. Almost at the weekly goal."
+        "text": "50 dials today, 2 meetings booked. Harborline Foods leads are tougher than expected to move. Dials hitting but conversions dropping."
       },
       {
         "employee_id": "emp_004",
         "day": "Friday",
-        "text": "44 dials today, 6 meetings booked. Wrapped up the week at 229 total dials and 34 meetings booked overall. Solid week all around."
+        "text": "44 dials today, 2 meetings booked. Wrapped up the week at 229 total dials but only 16 meetings booked. Dial volume solid but booking conversion is weak."
       },
       {
         "employee_id": "emp_005",
         "day": "Monday",
-        "text": "Spent the day iterating on the Creator Matching v2 spec and finally got the engineering team to align on the core algorithm parameters. The stakeholder input from design really helped clarify the speed versus accuracy tradeoff. We ran the first of our weekly research sessions today and gathered some really meaningful qualitative feedback on the onboarding friction points."
+        "text": "Matching v2 — still waiting on final alignment from engineering on the algorithm requirements. They flagged some data quality concerns that are blocking us from moving forward. Scheduled a research session but pushing to get eng clarity first since that's the main blocker."
       },
       {
         "employee_id": "emp_005",
         "day": "Tuesday",
-        "text": "The engineering alignment from yesterday held up through the architecture review, which is a huge step forward. We blocked out time to run two more user research sessions to hit our weekly cadence. The product team is actively iterating on the feedback loops based on this morning's creator cohort."
+        "text": "Another sync with engineering on the v2 requirements but we're still not fully aligned on the data pipeline approach. They want more product clarity on filtering logic. Rescheduled the research session for next week to focus internally on getting alignment first."
       },
       {
         "employee_id": "emp_005",
         "day": "Wednesday",
-        "text": "Successfully completed the second and third research sessions today, bringing our weekly total to three. The v2 spec is now fully locked after incorporating the latest stakeholder input, and we are ready to move from planning into implementation. No major blockers remaining on the tech side."
+        "text": "Managed to run one research session today which was helpful but we're still stuck on the same alignment issue with engineering. The filtering logic blocker is keeping us from finalizing the spec. Product leadership is weighing in but decisions are moving slowly."
       },
       {
         "employee_id": "emp_005",
         "day": "Thursday",
-        "text": "Wrapping up the fourth user research session this afternoon, which puts us at four out of five for the week. The matching algorithm parameters are officially approved by the product lead and engineering, so we are transitioning straight into sprint planning for implementation. The qualitative data is painting a clear path forward."
+        "text": "Still working through the engineering concerns on the algorithm approach. Stakeholder input sessions continue but we haven't reached consensus yet on the right path forward. Research is on hold while we work through the technical alignment. Hoping for clarity next week."
       },
       {
         "employee_id": "emp_005",
         "day": "Friday",
-        "text": "Final research session shifted to next week but we closed out with four solid sessions this time around. The v2 spec is fully approved and locked, and engineering has already started pulling tickets for the first implementation phase. Feeling really good about the alignment and the tangible progress on the roadmap."
+        "text": "Wrapping up the week with only 1 research session completed. The Matching v2 blocker with engineering is still unresolved and we're essentially in a holding pattern. User research KPI (5 sessions target) is way off pace. Will need to reset next week once we get alignment on the technical approach."
       }
     ],
     [
@@ -474,27 +464,27 @@
       {
         "employee_id": "emp_002",
         "day": "Monday",
-        "text": "Had a really wonderful start to the week with the Cinderhouse Coffee team today and I am so thrilled to share that they officially signed their renewal. The energy on the call was just so positive and they are really excited to keep building with us for another year. Also had a lovely catch up with Harborline Foods where we started chatting about a potential 15% upsell on their Q2 buy which feels like a great direction for the partnership."
+        "text": "Had the most wonderful start to the week with the Cinderhouse Coffee team and the energy on the call was just electric. They are so enthusiastic about renewing and I can feel it in every conversation that this is going to be a slam dunk. Also had a lovely catch up with Harborline Foods about their Q2 plans and there is so much positive momentum building there too."
       },
       {
         "employee_id": "emp_002",
         "day": "Tuesday",
-        "text": "The good vibes are definitely continuing this week after another great session with the team at Northwind Athletics. I am so happy to report that the extension is signed and we are all set to keep the momentum going. It feels so good to have these major milestones locked in so early in the week and I am just really proud of how these relationships are blossoming lately."
+        "text": "The good vibes are definitely continuing this week after another great session with the team at Northwind Athletics. They keep saying they want to move forward and the conversations are just so warm and collaborative. Cinderhouse also followed up with more positive signals today. I am just really proud of how these relationships are blossoming and I know we are so close to some big wins."
       },
       {
         "employee_id": "emp_002",
         "day": "Wednesday",
-        "text": "Spent most of the morning in a really productive strategy session with Petalcrest Beauty and the creative direction they want to take is just so inspiring. We are seeing so much enthusiasm for the new creator matching features and it makes me so optimistic about our expansion goals. Harborline is also leaning further into that 15% increase for their next campaign so everything is feeling very aligned right now."
+        "text": "Spent most of the morning in a really productive strategy session with Petalcrest Beauty and the creative direction they want to take is just so inspiring. We are seeing so much enthusiasm from them and it makes me so optimistic about our expansion goals. Harborline is also expressing a lot of interest in growing the partnership so everything is feeling very aligned right now."
       },
       {
         "employee_id": "emp_002",
         "day": "Thursday",
-        "text": "Really positive energy on the Ridgeway Outdoors check-in today as they were just glowing about the latest campaign results. We are having some very promising conversations about growing their presence on the platform and I am feeling very confident about where we are heading. It is just so rewarding to see these partners finding so much value in what we do ✨"
+        "text": "Really positive energy on the Ridgeway Outdoors check-in today and the way they talk about us just makes me feel so valued. We are having some very promising conversations about growing their presence on the platform. Cinderhouse still hasn't sent over their renewal paperwork but I know it is coming because the sentiment is just so warm and encouraging."
       },
       {
         "employee_id": "emp_002",
         "day": "Friday",
-        "text": "Wrapping up such a strong week with a final sync with the Harborline Foods team and they have officially committed to that 15% expansion revenue for Q2. It has been such a joy to see so many signatures and smiles this week from Cinderhouse to Northwind. Feeling incredibly grateful for the team's support in getting these renewals across the finish line and I am heading into the weekend with a lot of excitement for what is next."
+        "text": "Ending the week still waiting on Northwind's final sign-off but they assured me Monday is the day. Petalcrest did not get back to me today but I know they are just heads down on their own planning cycle. Overall I am feeling really good about where we stand and I truly believe next week is when everything comes together for both of these accounts."
       },
       {
         "employee_id": "emp_003",
@@ -503,18 +493,8 @@
       },
       {
         "employee_id": "emp_003",
-        "day": "Tuesday",
-        "text": "Launched experiment 2: Harborline influencer whitelist at 1.9% CTR early. CAC down 7% cumulative. Ridgeway search spend optimized, CPM down 12%. Overall ROAS 3.5x. Performance stable across all tiers."
-      },
-      {
-        "employee_id": "emp_003",
-        "day": "Wednesday",
-        "text": "Launched experiment 3: Petalcrest lookalike audience test. Initial ROAS 3.1x. Portfolio CAC down 9% vs last week. Northwind CTR steady at 2.2%. Monitoring frequency caps on Cinderhouse campaigns."
-      },
-      {
-        "employee_id": "emp_003",
         "day": "Thursday",
-        "text": "Launched experiment 4: Ridgeway multi-touch attribution test. Total experiments 4/3 target. CAC down 10%. Harborline ROAS increased to 3.6x. CPM avg across portfolio remains 10% below benchmark."
+        "text": "catching up on tue/wed — launched experiments 2 & 3. harborline influencer whitelist at 1.9% ctr, petalcrest lookalike audience test. overall portfolio roas 3.5x. cac down 7% cumulative. experiments on track to hit weekly target."
       },
       {
         "employee_id": "emp_003",
@@ -549,54 +529,54 @@
       {
         "employee_id": "emp_005",
         "day": "Monday",
-        "text": "Matching v2 has officially moved into QA today which is a huge step for the team as we work toward cross-functional alignment on the final logic. Ran my first research session this afternoon with a high-volume creator and the qualitative insights regarding the UI were very enlightening. Iterating on the feedback loop for tomorrow's session."
+        "text": "Matching v2 is back in alignment phase after QA found some critical issues with the algorithm approach. Need to work with engineering to reassess the core logic before we can move forward. Scheduled research but pushing to next week while we sort out the technical direction."
       },
       {
         "employee_id": "emp_005",
         "day": "Tuesday",
-        "text": "Second user research session completed today with a focus on the new search filters and the stakeholder input is helping us refine the prioritization of the v2 rollout. Engineering reports that initial test results in QA look very good for the core matching algorithm. Continuing to monitor the speed vs accuracy balance as we move toward staging."
+        "text": "Deep dive with engineering on the QA blockers and the scope of rework needed is larger than expected. Still trying to get alignment on what the right approach looks like. Research is deprioritized while we work through this alignment phase."
       },
       {
         "employee_id": "emp_005",
         "day": "Wednesday",
-        "text": "Third research session wrapped up this morning and we are seeing a lot of consistency in how creators want to interact with the marketplace. Matching v2 has been shipped to staging for internal dogfooding and the team is currently aligning on the final edge cases. Progress feels very steady and the outcomes are starting to materialize."
+        "text": "Managed to run one research session but honestly the focus needs to be on the algorithm issues first. Still facilitating conversations between product and engineering to find common ground on the approach. This alignment is taking longer than expected."
       },
       {
         "employee_id": "emp_005",
         "day": "Thursday",
-        "text": "Just finished the fourth research session and the feedback from our enterprise partners on the new matching logic is very positive. The feature is holding up well in the staging environment and we are currently iterating on the final documentation for the release. Engaging with the design team to ensure stakeholder expectations are fully met before we move out of QA 🔍"
+        "text": "Still in stakeholder alignment mode on the v2 requirements. The engineering team has concerns about the current approach and we're still debating the best path forward. No real progress on moving past this blocker yet."
       },
       {
         "employee_id": "emp_005",
         "day": "Friday",
-        "text": "Final research session of the week is done which brings us to a total of 5 sessions and a wealth of new insights to digest. Matching v2 is looking solid in the final QA gates and we are seeing very promising stability in the staging environment. It has been a week of real forward motion and I am very pleased with how the team has delivered on these milestones."
+        "text": "Wrapping up with only 1 research session completed this week (5 target). The Matching v2 feature is still stuck on the same algorithmic blocker with no clear resolution yet. User research KPI is completely off pace. Need to get engineering and product aligned before we can move forward on anything."
       }
     ],
     [
       {
         "employee_id": "emp_001",
         "day": "Monday",
-        "text": "32 creators onboarded today, exceeding weekly pace. Response time avg at 21hr. Initial batch of Northwind applications processed. Focusing on queue volume for tomorrow."
+        "text": "5 creators onboarded today. Response time at 23hr avg. Northwind applications processed but queue is heavier than usual. Pushing to clear backlog tomorrow."
       },
       {
         "employee_id": "emp_001",
         "day": "Tuesday",
-        "text": "29 creators onboarded. Response time ticked up to 23hr due to high volume. Cinderhouse campaign leads are current. Pushing to keep response metrics under the 24hr hard target."
+        "text": "4 creators onboarded. Response time ticked up to 24hr due to high volume. Cinderhouse campaign leads are current. Pushing to keep response metrics under the 24hr hard target."
       },
       {
         "employee_id": "emp_001",
         "day": "Wednesday",
-        "text": "30 creators onboarded. Response time holding at 22hr. Harborline intake complete. Maintaining the onboarding pace but monitoring the slight lag in creator comms."
+        "text": "5 creators onboarded. Response time holding at 23hr. Harborline intake complete. Maintaining the onboarding pace but monitoring the slight lag in creator comms."
       },
       {
         "employee_id": "emp_001",
         "day": "Thursday",
-        "text": "27 creators onboarded. Response time at 23hr avg. Ridgeway Outdoors group live. Queue is heavy but manageable for the 25/wk goal."
+        "text": "4 creators onboarded. Response time at 25hr avg. Ridgeway Outdoors group live. Queue is heavy, falling behind on the 25/wk goal."
       },
       {
         "employee_id": "emp_001",
         "day": "Friday",
-        "text": "31 creators onboarded today, total 149 for the week. Response time finished at 22hr. All weekend batches prepped for Petalcrest. Metrics stable but slow."
+        "text": "3 creators onboarded today, 21 total for the week — missed the 25 target. Response time finished at 26hr, above the 24hr ceiling. Petalcrest batches prepped for Monday. Rough week, need to recover volume."
       },
       {
         "employee_id": "emp_002",
@@ -698,27 +678,27 @@
       {
         "employee_id": "emp_001",
         "day": "Monday",
-        "text": "32 new creators onboarded. Response time 15hr. Northwind and Petalcrest pools at 100% utilization. Zero QC flags. Tuesday queue set with 30 in final review "
+        "text": "9 creators onboarded. Response time 12hr. Northwind and Petalcrest pools at 100% utilization. Zero QC flags. Tuesday queue prepped and ready"
       },
       {
         "employee_id": "emp_001",
         "day": "Tuesday",
-        "text": "34 new creators onboarded. Response time 14hr. Harborline and Ridgeway fully staffed. One minor QC flag resolved same-day. Wednesday queue ready with 33 pending"
+        "text": "8 creators onboarded. Response time 13hr. Harborline and Ridgeway fully staffed. One minor QC flag resolved same-day. Wednesday queue ready"
       },
       {
         "employee_id": "emp_001",
         "day": "Wednesday",
-        "text": "35 new creators onboarded. Response time 15hr. Cinderhouse and Petalcrest at full coverage. Clean pipeline, no escalations. Thursday queue at 31 in review"
+        "text": "7 creators onboarded. Response time 14hr. Cinderhouse and Petalcrest at full coverage. Clean pipeline, no escalations. Thursday queue prepped"
       },
       {
         "employee_id": "emp_001",
         "day": "Thursday",
-        "text": "31 new creators onboarded. Response time 16hr. Northwind and Ridgeway fully staffed. Zero backlog. Friday queue holding 29 final approvals"
+        "text": "8 creators onboarded. Response time 13hr. Northwind and Ridgeway fully staffed. Zero backlog. Friday queue ready to close strong"
       },
       {
         "employee_id": "emp_001",
         "day": "Friday",
-        "text": "33 new creators onboarded. Response time 14hr. All brand pools fully staffed across board. No QC issues. Best week throughput, next week queue prepped at 28"
+        "text": "9 creators onboarded, 41 total for the week (164% of target). Response time 13hr avg. All brand pools fully staffed. No QC issues. Best week this quarter, next week queue prepped"
       },
       {
         "employee_id": "emp_002",
@@ -758,12 +738,12 @@
       {
         "employee_id": "emp_004",
         "day": "Monday",
-        "text": "47 dials, 2 meetings — Northwind and Ridgeway, solid start"
+        "text": "47 dials, 4 meetings — Northwind, Ridgeway, Petalcrest, plus a net-new. great quality convos"
       },
       {
         "employee_id": "emp_004",
         "day": "Tuesday",
-        "text": "49 dials, 2 meetings — Petalcrest and Cinderhouse, feeling good"
+        "text": "49 dials, 3 meetings — Cinderhouse, Harborline, Ridgeway follow-up. momentum is building strong"
       },
       {
         "employee_id": "emp_004",
@@ -773,12 +753,12 @@
       {
         "employee_id": "emp_004",
         "day": "Thursday",
-        "text": "50 dials, 2 meetings — Ridgeway and net-new, stacking nicely"
+        "text": "50 dials, 3 meetings — Ridgeway, Northwind callback, Petalcrest follow-up. the calls are converting"
       },
       {
         "employee_id": "emp_004",
         "day": "Friday",
-        "text": "48 dials, 3 meetings — Northwind, Petalcrest, Cinderhouse, crushed it this week"
+        "text": "48 dials, 4 meetings — Cinderhouse, Harborline, Ridgeway, and another net-new. 241 dials, 17 meetings for the week. absolutely crushed the conversion metrics"
       },
       {
         "employee_id": "emp_005",
@@ -803,7 +783,7 @@
       {
         "employee_id": "emp_005",
         "day": "Friday",
-        "text": "Continued iteration on v2 beta with a couple of small bug fixes deployed, system is stable and adoption trending in the right direction. No new research sessions today so total at 4, focusing on consolidating insights and planning next iteration"
+        "text": "Final research session completed this afternoon bringing the weekly total to 5, all KPI targets met. Continued iteration on v2 beta with minor bug fixes deployed. System is stable, user adoption trending strong, and the team is already planning the next iteration cycle. Best week on delivery for Matching v2."
       }
     ]
   ]

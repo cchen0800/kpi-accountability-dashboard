@@ -1,0 +1,117 @@
+[
+  {
+    "employee_id": "emp_001",
+    "day": "Monday",
+    "text": "26 creators onboarded today, exceeding the daily average of 25. Response time holding steady at 22hr. Northwind and Petalcrest applicants all processed. Prepped 30 apps for Tuesday morning."
+  },
+  {
+    "employee_id": "emp_001",
+    "day": "Tuesday",
+    "text": "11 creators onboarded. Numbers down due to major platform outage mid-morning. Response time spiked to 25hr. Working through the backlog now. Goal for Wednesday is to clear the queue if systems stay up."
+  },
+  {
+    "employee_id": "emp_001",
+    "day": "Wednesday",
+    "text": "12 creators onboarded. Outage persisted through early afternoon creating a significant bottleneck. Response time currently at 28hr. All 60 pending Ridgeway and Cinderhouse apps are still in the queue for tomorrow."
+  },
+  {
+    "employee_id": "emp_001",
+    "day": "Thursday",
+    "text": "29 creators onboarded as systems stabilized. Response time down to 26hr. Cleared half of the outage backlog. Harborline batch is fully ramped. Expecting to hit the 25 per day target again on Friday."
+  },
+  {
+    "employee_id": "emp_001",
+    "day": "Friday",
+    "text": "31 creators onboarded today. Response time recovered to 23hr. Weekly onboarding total reached 109 despite the mid-week outage. All systems normal for the weekend. Prepping 35 apps for Monday morning."
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Monday",
+    "text": "Started the week with such a great sync with the Harborline Foods team and I am feeling so much positive energy about our partnership. They had a few final questions on the contract terms but the vibes are excellent. Also reached out to Ridgeway Outdoors to get our quarterly review on the calendar and I am looking forward to hearing back from them soon."
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Tuesday",
+    "text": "Incredible news today as the Harborline Foods renewal is officially signed and in the books which is such a huge win for the team. I had a quick chat with Ridgeway Outdoors earlier and although they seem a little swamped with their own internal projects I am sure we will get that expansion meeting locked in by the end of the week."
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Wednesday",
+    "text": "Still riding high on the Harborline news and spent most of the morning beginning the onboarding process for their expanded creator tier. Ridgeway has been a little quiet since yesterday but it is probably just a busy season for them and I am confident they will jump back into the thread once they clear their plates. Petalcrest also had some lovely things to say about our latest UGC batch."
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Thursday",
+    "text": "Had a wonderful brainstorming session for the Cinderhouse Coffee account and they are showing so much interest in a Q4 expansion. I sent another follow up to the Ridgeway team just to keep us top of mind for them. Even though it has been a few days since we last connected I know they value the relationship and will reach out when the timing is right."
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Friday",
+    "text": "Wrapping up a really productive week with the Harborline renewal safely tucked away. I havent heard back from Ridgeway just yet but I am not worried at all since they are likely just heads down on their new product launch. I am planning to give them some space over the weekend and will check back in Monday with some fresh ideas for their expansion revenue goals."
+  },
+  {
+    "employee_id": "emp_003",
+    "day": "Wednesday",
+    "text": "catching up on mon/tue — launched experiment one mon which was northwind video creative split test. tue focused on cinderhouse audience scaling. launched experiment two today for petalcrest beauty influencers. portfolio roas 3.1x. cac down 4% wtd. cpm 14.50 across harborline."
+  },
+  {
+    "employee_id": "emp_003",
+    "day": "Thursday",
+    "text": "launched experiment three today which was ridgeway outdoors retargeting logic. cac down 5% wtd. harborline reels ctr at 1.9%. cinderhouse search ads showing 3.4x roas. all experiments for the week now live and collecting data."
+  },
+  {
+    "employee_id": "emp_003",
+    "day": "Friday",
+    "text": "portfolio roas ended at 3.2x. cac maintained 5% reduction for the week. northwind experiment showing 12% lift in conversion. three experiments launched and stable. monday plan involves shifting budget to petalcrest top performers."
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Monday",
+    "text": "35 dials today and 2 meetings booked. northwind looks like a great lead. feeling good about the momentum."
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Tuesday",
+    "text": "32 dials and 1 meeting booked. bit of a slow day but had some really quality convos with harborline prospects."
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Wednesday",
+    "text": "30 dials today. 1 meeting booked with cinderhouse. short on the dial count but the people i did talk to were super engaged."
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Thursday",
+    "text": "34 dials and 2 meetings on the books. petalcrest referral was a win. love the energy of these calls lately."
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Friday",
+    "text": "31 dials to wrap up the week. 1 meeting booked. total dials a bit lower than usual but the quality of the pipeline is looking sharp."
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Monday",
+    "text": "Matching v2 — focusing on internal alignment regarding the new data schema for creator profiles. Spent the afternoon in a deep dive with the engineering leads to understand how the new attributes will flow through. Completed the first user research session of the week with a group of beauty creators and the qualitative feedback was very illuminating."
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Tuesday",
+    "text": "Continuing to iterate on the matching algorithm components. There is some healthy debate among stakeholders about how much we should weight past performance versus recent engagement. Ran our second research session this morning which gave us more clarity on the creator dashboard experience. Still identifying potential blockers for the full release."
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Wednesday",
+    "text": "Excited to share that we officially shipped the core matching algorithm component to the staging environment today which is a solid step forward. However we are navigating a new blocker regarding the data pipeline integration that might impact our timeline for the full version. Completed a third research session today to keep the feedback loop tight."
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Thursday",
+    "text": "Working through the data pipeline integration issue with the infra team to ensure we have total alignment on the fix. It is a complex process that requires more stakeholder input before we commit to a specific path. Iterating on the UI mocks based on the three research sessions we have completed so far this week."
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Friday",
+    "text": "Wrapping up the week with 3 total user research sessions completed which provided a wealth of process insights. The data pipeline blocker is still under review but we are making progress on the technical requirements. Matching v2 is moving along as we balance speed with the necessary architectural integrity."
+  }
+]

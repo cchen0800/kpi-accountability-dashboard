@@ -1,0 +1,127 @@
+[
+  {
+    "employee_id": "emp_001",
+    "day": "Monday",
+    "text": "32 creators onboarded today, cleared half of the backlog from the outage. Response time down to 17hr. Northwind campaign fully staffed. Tomorrow focusing on the remaining 25 apps from the queue 🚀"
+  },
+  {
+    "employee_id": "emp_001",
+    "day": "Tuesday",
+    "text": "35 creators onboarded, backlog is officially cleared. Response time at 15hr avg. Harborline Foods batch is complete. Ready to cruise through the standard 25/day target for the rest of the week."
+  },
+  {
+    "employee_id": "emp_001",
+    "day": "Wednesday",
+    "text": "30 creators onboarded today. Response time holding steady at 15hr. Petalcrest Beauty expansion group is live. Maintaining high volume with zero delay in support tickets."
+  },
+  {
+    "employee_id": "emp_001",
+    "day": "Thursday",
+    "text": "31 creators onboarded. Response time 14hr avg. Ridgeway Outdoors campaign ready for launch. Weekly target of 125 already exceeded with one day to go."
+  },
+  {
+    "employee_id": "emp_001",
+    "day": "Friday",
+    "text": "34 creators onboarded today, 162 total for the week. Final response time 15hr avg. Cinderhouse Coffee cohort is fully ramped. System performance is stable and metrics are at record highs 📈"
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Monday",
+    "text": "Had a really wonderful start to the week with the Cinderhouse Coffee team today and I am so thrilled to share that they officially signed their renewal. The energy on the call was just so positive and they are really excited to keep building with us for another year. Also had a lovely catch up with Harborline Foods where we started chatting about a potential 15% upsell on their Q2 buy which feels like a great direction for the partnership."
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Tuesday",
+    "text": "The good vibes are definitely continuing this week after another great session with the team at Northwind Athletics. I am so happy to report that the extension is signed and we are all set to keep the momentum going. It feels so good to have these major milestones locked in so early in the week and I am just really proud of how these relationships are blossoming lately."
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Wednesday",
+    "text": "Spent most of the morning in a really productive strategy session with Petalcrest Beauty and the creative direction they want to take is just so inspiring. We are seeing so much enthusiasm for the new creator matching features and it makes me so optimistic about our expansion goals. Harborline is also leaning further into that 15% increase for their next campaign so everything is feeling very aligned right now."
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Thursday",
+    "text": "Really positive energy on the Ridgeway Outdoors check-in today as they were just glowing about the latest campaign results. We are having some very promising conversations about growing their presence on the platform and I am feeling very confident about where we are heading. It is just so rewarding to see these partners finding so much value in what we do ✨"
+  },
+  {
+    "employee_id": "emp_002",
+    "day": "Friday",
+    "text": "Wrapping up such a strong week with a final sync with the Harborline Foods team and they have officially committed to that 15% expansion revenue for Q2. It has been such a joy to see so many signatures and smiles this week from Cinderhouse to Northwind. Feeling incredibly grateful for the team's support in getting these renewals across the finish line and I am heading into the weekend with a lot of excitement for what is next."
+  },
+  {
+    "employee_id": "emp_003",
+    "day": "Monday",
+    "text": "Portfolio ROAS 3.4x. CAC down 5% WoW. Launched experiment 1: Northwind video sequencing at 2.1% CTR. Cinderhouse display ads holding 2.9x ROAS. Reviewing Harborline creative for tomorrow's launch."
+  },
+  {
+    "employee_id": "emp_003",
+    "day": "Tuesday",
+    "text": "Launched experiment 2: Harborline influencer whitelist at 1.9% CTR early. CAC down 7% cumulative. Ridgeway search spend optimized, CPM down 12%. Overall ROAS 3.5x. Performance stable across all tiers."
+  },
+  {
+    "employee_id": "emp_003",
+    "day": "Wednesday",
+    "text": "Launched experiment 3: Petalcrest lookalike audience test. Initial ROAS 3.1x. Portfolio CAC down 9% vs last week. Northwind CTR steady at 2.2%. Monitoring frequency caps on Cinderhouse campaigns."
+  },
+  {
+    "employee_id": "emp_003",
+    "day": "Thursday",
+    "text": "Launched experiment 4: Ridgeway multi-touch attribution test. Total experiments 4/3 target. CAC down 10%. Harborline ROAS increased to 3.6x. CPM avg across portfolio remains 10% below benchmark."
+  },
+  {
+    "employee_id": "emp_003",
+    "day": "Friday",
+    "text": "Weekly summary: CAC down 12%, ROAS 3.5x avg. 4 experiments live. Petalcrest test results show 15% lift in conversion. Cinderhouse scaling at 3.3x ROAS. All performance KPIs met or exceeded for the period 📊"
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Monday",
+    "text": "42 dials today and 3 meetings booked. Northwind was a big win on the outreach front. feeling like the rhythm is coming back already."
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Tuesday",
+    "text": "hit 45 dials and landed 4 meetings. really solid conversations with some beauty brands that look promising. momentum is building."
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Wednesday",
+    "text": "48 dials today and 5 meetings on the calendar. the Harborline referral path is really heating up for me. best day in a while ☕"
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Thursday",
+    "text": "another 46 dials and 6 meetings booked. Cinderhouse prospects are biting and the pitch feels super sharp right now. almost at the weekly goal."
+  },
+  {
+    "employee_id": "emp_004",
+    "day": "Friday",
+    "text": "finished with 45 dials and 7 meetings booked today for a total of 25 this week. Ridgeway lead finally converted to a discovery call. huge week for the pipeline."
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Monday",
+    "text": "Matching v2 has officially moved into QA today which is a huge step for the team as we work toward cross-functional alignment on the final logic. Ran my first research session this afternoon with a high-volume creator and the qualitative insights regarding the UI were very enlightening. Iterating on the feedback loop for tomorrow's session."
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Tuesday",
+    "text": "Second user research session completed today with a focus on the new search filters and the stakeholder input is helping us refine the prioritization of the v2 rollout. Engineering reports that initial test results in QA look very good for the core matching algorithm. Continuing to monitor the speed vs accuracy balance as we move toward staging."
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Wednesday",
+    "text": "Third research session wrapped up this morning and we are seeing a lot of consistency in how creators want to interact with the marketplace. Matching v2 has been shipped to staging for internal dogfooding and the team is currently aligning on the final edge cases. Progress feels very steady and the outcomes are starting to materialize."
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Thursday",
+    "text": "Just finished the fourth research session and the feedback from our enterprise partners on the new matching logic is very positive. The feature is holding up well in the staging environment and we are currently iterating on the final documentation for the release. Engaging with the design team to ensure stakeholder expectations are fully met before we move out of QA 🔍"
+  },
+  {
+    "employee_id": "emp_005",
+    "day": "Friday",
+    "text": "Final research session of the week is done which brings us to a total of 5 sessions and a wealth of new insights to digest. Matching v2 is looking solid in the final QA gates and we are seeing very promising stability in the staging environment. It has been a week of real forward motion and I am very pleased with how the team has delivered on these milestones."
+  }
+]
