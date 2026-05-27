@@ -1,6 +1,7 @@
 import hashlib
 import hmac
 import logging
+import os
 import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
@@ -13,8 +14,11 @@ from models import db, PageView
 
 log = logging.getLogger(__name__)
 
-TELEGRAM_BOT_TOKEN = "8768789762:AAF7WmVWD0eoSt1g3qfHA_CJprCcpRNcCOU"
-TELEGRAM_CHAT_ID = "7477285272"
+# Telegram notifications are opt-in via env vars. If either is unset (the public
+# demo case), _send_telegram is a no-op. Never hardcode credentials here — git
+# history makes anything checked in here permanently public.
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID", "")
 
 # Shared 2-thread pool for Telegram sends — avoids spawning a new thread per page view
 _telegram_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="telegram")
@@ -22,6 +26,8 @@ _telegram_pool = ThreadPoolExecutor(max_workers=2, thread_name_prefix="telegram"
 
 def _send_telegram(message):
     """Send a Telegram message via shared pool so it doesn't block the request."""
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        return
     def _do():
         try:
             http_requests.post(

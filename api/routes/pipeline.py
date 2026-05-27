@@ -1,6 +1,9 @@
 """Pipeline trigger and status endpoints."""
 
+import os
 import threading
+import time
+from collections import deque
 from flask import Blueprint, jsonify, g, request
 
 from models import PipelineRun
@@ -10,10 +13,49 @@ from routes.auth import _send_telegram
 pipeline_bp = Blueprint('pipeline', __name__)
 
 
+# Per-IP rate limit on pipeline triggers. Each /api/pipeline/run* hit is 3-12+
+# GPT calls, so unguarded this is a budget hole on a public demo. Defaults are
+# tuned for "curious visitor pokes around once or twice" — override via env on
+# trusted environments.
+_PIPELINE_RATE_WINDOW_SEC = int(os.environ.get("PIPELINE_RATE_WINDOW_SEC", "3600"))
+_PIPELINE_RATE_MAX = int(os.environ.get("PIPELINE_RATE_MAX", "5"))
+_pipeline_hits: dict[str, deque[float]] = {}
+_pipeline_hits_lock = threading.Lock()
+
+
+def _client_ip() -> str:
+    return request.headers.get("X-Real-IP") or request.headers.get("X-Forwarded-For", "").split(",")[0].strip() or request.remote_addr or "unknown"
+
+
+def _check_pipeline_rate_limit():
+    """Return a Flask error response if the client IP is over the limit, else None."""
+    if _PIPELINE_RATE_MAX <= 0:  # disabled
+        return None
+    ip = _client_ip()
+    now = time.monotonic()
+    cutoff = now - _PIPELINE_RATE_WINDOW_SEC
+    with _pipeline_hits_lock:
+        hits = _pipeline_hits.setdefault(ip, deque())
+        while hits and hits[0] < cutoff:
+            hits.popleft()
+        if len(hits) >= _PIPELINE_RATE_MAX:
+            retry_after = int(hits[0] + _PIPELINE_RATE_WINDOW_SEC - now) + 1
+            return jsonify({
+                'error': 'Demo rate limit reached. The pipeline is expensive to run — try again later.',
+                'retry_after_seconds': retry_after,
+            }), 429
+        hits.append(now)
+    return None
+
+
 @pipeline_bp.route('/api/pipeline/run', methods=['POST'])
 def trigger_pipeline():
     if is_pipeline_running():
         return jsonify({'error': 'Pipeline already running'}), 409
+
+    limited = _check_pipeline_rate_limit()
+    if limited is not None:
+        return limited
 
     from flask import current_app
     app = current_app._get_current_object()
@@ -30,6 +72,10 @@ def trigger_stage(stage):
 
     if is_pipeline_running():
         return jsonify({'error': 'Pipeline already running'}), 409
+
+    limited = _check_pipeline_rate_limit()
+    if limited is not None:
+        return limited
 
     # Validate stage ordering
     run = PipelineRun.query.order_by(PipelineRun.id.desc()).first()

@@ -100,6 +100,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <DemoBanner />
       <NavBar />
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
         <Suspense fallback={<Loading />}>
@@ -110,6 +111,32 @@ export default function App() {
           </Routes>
         </Suspense>
       </div>
+    </div>
+  )
+}
+
+// Thin strip identifying this as a public demo. Lives on the `demo` branch
+// only — main builds don't include it.
+function DemoBanner() {
+  return (
+    <div style={{
+      background: '#111',
+      color: '#fff',
+      fontSize: 12,
+      lineHeight: 1.4,
+      padding: '6px 16px',
+      textAlign: 'center',
+      letterSpacing: '0.02em',
+    }}>
+      Live demo · synthetic data · built by{' '}
+      <a
+        href="https://leveragedxlabs.com"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{ color: '#fff', textDecoration: 'underline' }}
+      >
+        LeveragedLabs
+      </a>
     </div>
   )
 }

@@ -1,0 +1,41 @@
+# Render Blueprint for the public demo at leveragedxlabs.com/demos/kpi-dashboard.
+#
+# To deploy:
+#   1. Push the `demo` branch to GitHub (it tracks origin/demo).
+#   2. In the Render dashboard, "New +" → "Blueprint" → connect this repo and
+#      pick the `demo` branch. Render reads this file and creates the service.
+#   3. After creation, open the service's Environment tab and set:
+#        OPENAI_API_KEY          — required, your project key
+#        SECRET_KEY              — any random 32+ char string (Flask sessions)
+#      Leave APP_PASSWORD unset so the demo is publicly accessible.
+#      Leave TELEGRAM_* unset to disable activity notifications.
+#   4. In the OpenAI dashboard, set a project-level monthly spend cap ($25–50)
+#      as a hard backstop in addition to the per-IP rate limit baked into the
+#      app (PIPELINE_RATE_MAX env var).
+#   5. Once Render reports "live", copy the *.onrender.com URL and paste it
+#      into the leveragedxlabs-site repo's vercel.json rewrite (placeholder
+#      `RENDER_DEMO_URL`).
+
+services:
+  - type: web
+    name: kpi-dashboard-demo
+    runtime: docker
+    plan: starter           # $7/mo, no spin-down. free tier cold-starts (~30s) ruin the demo experience.
+    branch: demo
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
+      - key: PIPELINE_RATE_MAX
+        value: "5"
+      - key: PIPELINE_RATE_WINDOW_SEC
+        value: "3600"
+      - key: WEB_CONCURRENCY
+        value: "2"
+      # Secrets — set these in the Render dashboard, not here.
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        sync: false
